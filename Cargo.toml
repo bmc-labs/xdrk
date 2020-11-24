@@ -1,0 +1,25 @@
+# Copyright 2020 bmc::labs Gmbh. All rights reserved.
+#
+# Authors: Florian Eich <florian@bmc-labs.com>
+
+[package]
+name = "xdrkrs"
+description = "Library to open XRK and DRK files, produced by AiM devices"
+
+version = "0.1.0"
+authors = ["Florian Eich <florian@bmc-labs.com>"]
+
+edition = "2018"
+build = "build.rs"
+
+
+[dev-dependencies]
+pretty_assertions = "0.6"
+
+
+[dependencies]
+libc = "*"
+
+
+[profile.dev]
+rpath = true
