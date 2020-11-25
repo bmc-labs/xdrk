@@ -3,7 +3,7 @@
 // Author: Florian Eich <florian@bmc-labs.com>
 
 
-use libc::{c_char, c_int};
+use std::os::raw::{c_char, c_int};
 
 
 #[repr(C)]
@@ -22,14 +22,8 @@ pub struct tm {
 }
 
 
+#[allow(dead_code)]
 extern "C" {
-  /// Returns the compile date of this library as a C string
-  pub fn get_library_date() -> *const c_char;
-
-  /// Returns the compile time of this library as a C string
-  pub fn get_library_time() -> *const c_char;
-  // ----------------------------------------------------------------------- //
-
   // FILE OPENING / CLOSING FUNCTIONS -------------------------------------- //
   //
   /// Open a drk/xrk file
@@ -46,7 +40,7 @@ extern "C" {
   /// Close a drk/xrk file by path
   ///
   /// # Arguments
-  /// - `full_path_name`: full path to the file to be opened as a C string
+  /// - `full_path_name`: full path to the file to be closed as a C string
   ///
   /// # Returns
   /// - on success, the (positive) internal index of the file
@@ -503,4 +497,13 @@ extern "C" {
                                          pvalues: *mut f64,
                                          cnt: c_int)
                                          -> c_int;
+
+  // META FUNCTIONS -------------------------------------------------------- //
+  /// Returns the compile date of this library as a C string
+  pub fn get_library_date() -> *const c_char;
+
+  /// Returns the compile time of this library as a C string
+  pub fn get_library_time() -> *const c_char;
+  // ----------------------------------------------------------------------- //
+
 }
