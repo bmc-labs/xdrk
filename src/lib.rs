@@ -3,11 +3,11 @@
 // Author: Florian Eich <florian@bmc-labs.com>
 
 mod fubar;
-mod storage;
 mod service;
+mod storage;
 mod xdrkbindings;
 mod xdrkfile;
 
 pub use fubar::{Fubar, Result};
-pub use storage::LapInfo;
+pub use storage::{ChannelData, LapInfo};
 pub use xdrkfile::XdrkFile;

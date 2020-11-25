@@ -5,8 +5,8 @@
 use super::{ensure,
             fubar,
             fubar::Result,
-            storage::LapInfo,
             service as srv,
+            storage::{ChannelData, LapInfo},
             xdrkbindings as aim};
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
@@ -240,21 +240,16 @@ impl XdrkFile {
     })
   }
 
-  /// Get number of datapoints in channel
+  /// Get number of samples in channel
   ///
   /// # Arguments
   /// - `channel_idx`: the channel index
   ///
   /// # Returns
   /// - the number of datapoints in the channel
-  ///
-  /// - on success, the number of datapoints in the channel
-  /// - `0` if the channel contains no datapoints (theoretically impossible)
-  /// - on error, a negative value
   pub fn channel_samples_count(&self, channel_idx: usize) -> Result<usize> {
-    let count = unsafe {
-      aim::get_channel_samples_count(self.idx, channel_idx as i32)
-    };
+    let count =
+      unsafe { aim::get_channel_samples_count(self.idx, channel_idx as i32) };
 
     match count.cmp(&0) {
       Ordering::Greater => Ok(count as usize),
@@ -263,73 +258,102 @@ impl XdrkFile {
     }
   }
 
-  /*
-  /// Get datapoints in channel
+  /// Get samples in channel
   ///
   /// # Arguments
-  /// - `idxf`: the internal file index returned by the `open_file` function
-  /// - `idxc`: the channel index
-  /// - `ptimes`: a pointer to **a buffer** of `mut f64` where timestamps of
-  /// datapoints are stored
-  /// - `pvalues`: a pointer to **a buffer** of `mut f64` where datapoints are
-  /// stored
-  /// - `cnt`: the number of datapoints to be read (find using the
-  /// `get_channel_samples_count` function)
+  /// - `channel_idx`: the channel index
   ///
   /// # Returns
-  /// - on success, the number of datapoints in the channel
-  /// - `0` if the `cnt` argument does not match the number of datapoints OR if
-  /// the channel contains no datapoints (theoretically impossible)
-  /// - on error, a negative value
-  pub fn get_channel_samples(idxf: c_int,
-                             idxc: c_int,
-                             ptimes: *mut f64,
-                             pvalues: *mut f64,
-                             cnt: c_int)
-                             -> c_int;
+  /// - a `ChannelData` object containing the channel samples
+  pub fn channel_samples(&self, channel_idx: usize) -> Result<ChannelData> {
+    let count = self.channel_samples_count(channel_idx)?;
 
-  /// Get number of datapoints in channel in a given lap
+    let mut timestamps = Vec::with_capacity(count);
+    let mut samples = Vec::with_capacity(count);
+
+    let timestamps_ptr = timestamps.as_mut_ptr();
+    let samples_ptr = samples.as_mut_ptr();
+
+    let read = unsafe {
+      aim::get_channel_samples(self.idx,
+                               channel_idx as i32,
+                               timestamps_ptr,
+                               samples_ptr,
+                               count as i32)
+    };
+    ensure!(read == count as i32, "error reading channel samples");
+
+    unsafe {
+      timestamps.set_len(count);
+      samples.set_len(count);
+    }
+
+    Ok(ChannelData::from_ts(timestamps, samples))
+  }
+
+  /// Get number of samples in channel in a given lap
   ///
   /// # Arguments
-  /// - `idxf`: the internal file index returned by the `open_file` function
-  /// - `idxl`: the lap index
-  /// - `idxc`: the channel index
+  /// - `lap_idx`: the lap index
+  /// - `channel_idx`: the channel index
   ///
   /// # Returns
-  /// - on success, the number of datapoints in the channel in the lap
-  /// - `0` if the channel contains no datapoints (theoretically impossible)
-  /// - on error, a negative value
-  pub fn get_lap_channel_samples_count(idxf: c_int,
-                                       idxl: c_int,
-                                       idxc: c_int)
-                                       -> c_int;
+  /// - the number of samples for this channel in this lap
+  pub fn lap_channel_samples_count(&self,
+                                   lap_idx: usize,
+                                   channel_idx: usize)
+                                   -> Result<usize>
+  {
+    let count = unsafe {
+      aim::get_lap_channel_samples_count(self.idx,
+                                         lap_idx as i32,
+                                         channel_idx as i32)
+    };
+    match count.cmp(&0) {
+      Ordering::Greater => Ok(count as usize),
+      Ordering::Equal => fubar!("channel contains 0 samples in this lap"),
+      Ordering::Less => fubar!("error getting lap count"),
+    }
+  }
 
   /// Get datapoints in channel in a given lap
   ///
   /// # Arguments
-  /// - `idxf`: the internal file index returned by the `open_file` function
-  /// - `idxl`: the lap index
-  /// - `idxc`: the channel index
-  /// - `ptimes`: a pointer to **a buffer** of `mut f64` where timestamps of
-  /// datapoints are stored
-  /// - `pvalues`: a pointer to **a buffer** of `mut f64` where datapoints are
-  /// stored
-  /// - `cnt`: the number of datapoints to be read (find using the
-  /// `get_channel_samples_count` function)
+  /// - `lap_idx`: the lap index
+  /// - `channel_idx`: the channel index
   ///
   /// # Returns
-  /// - on success, the number of datapoints in the channel
-  /// - `0` if the `cnt` argument does not match the number of datapoints OR if
-  /// the channel contains no datapoints (theoretically impossible)
-  /// - on error, a negative value
-  pub fn get_lap_channel_samples(idxf: c_int,
-                                 idxl: c_int,
-                                 idxc: c_int,
-                                 ptimes: *mut f64,
-                                 pvalues: *mut f64,
-                                 cnt: c_int)
-                                 -> c_int;
-  */
+  /// - a `ChannelData` object containing the channel samples for this lap
+  pub fn lap_channel_samples(&self,
+                             lap_idx: usize,
+                             channel_idx: usize)
+                             -> Result<ChannelData>
+  {
+    let count = self.lap_channel_samples_count(lap_idx, channel_idx)?;
+
+    let mut timestamps = Vec::with_capacity(count);
+    let mut samples = Vec::with_capacity(count);
+
+    let timestamps_ptr = timestamps.as_mut_ptr();
+    let samples_ptr = samples.as_mut_ptr();
+
+    let read = unsafe {
+      aim::get_lap_channel_samples(self.idx,
+                                   lap_idx as i32,
+                                   channel_idx as i32,
+                                   timestamps_ptr,
+                                   samples_ptr,
+                                   count as i32)
+    };
+    ensure!(read == count as i32, "error reading channel samples");
+
+    unsafe {
+      timestamps.set_len(count);
+      samples.set_len(count);
+    }
+
+    Ok(ChannelData::from_ts(timestamps, samples))
+  }
 }
 
 // META FUNCTIONS ---------------------------------------------------------- //
@@ -415,7 +439,8 @@ mod tests {
                xrk_file.date_time().unwrap());
 
     assert_eq!(4, xrk_file.laps_count().unwrap());
-    assert_eq!(LapInfo::new(383.258, 170.488), xrk_file.lap_info(2).unwrap());
+    assert_eq!(LapInfo::new(383.258, 170.488),
+               xrk_file.lap_info(2).unwrap());
 
     // CHANNEL INFORMATION FUNCTIONS --------------------------------------- //
     assert_eq!(40, xrk_file.channels_count().unwrap());
@@ -432,9 +457,12 @@ mod tests {
     assert_eq!(57980, xrk_file.channel_samples_count(2).unwrap());
     assert_eq!(57952, xrk_file.channel_samples_count(15).unwrap());
 
-    for i in 0..40 {
-      println!("{:#?}", xrk_file.channel_samples_count(i).unwrap());
-    }
+    assert_eq!(false, xrk_file.channel_samples(0).unwrap().is_empty());
+
+    assert_eq!(162, xrk_file.lap_channel_samples_count(2, 0).unwrap());
+
+    assert_eq!(false, xrk_file.lap_channel_samples(2, 0).unwrap().is_empty());
+    println!("{:#?}", xrk_file.lap_channel_samples(2, 0).unwrap());
   }
 
   #[test]

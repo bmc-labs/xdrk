@@ -18,8 +18,20 @@ impl LapInfo {
 }
 
 
-// #[derive(Debug, PartialEq, Getters, MutGetters)]
-// #[getset(get = "pub", get_mut = "pub")]
-// pub struct ChannelData {
+#[derive(Debug, PartialEq, Getters, MutGetters)]
+#[getset(get = "pub", get_mut = "pub")]
+pub struct ChannelData {
+  timestamps: Vec<f64>,
+  samples:    Vec<f64>,
+}
 
-// }
+impl ChannelData {
+  pub fn from_ts(timestamps: Vec<f64>, samples: Vec<f64>) -> Self {
+    Self { timestamps,
+           samples }
+  }
+
+  pub fn is_empty(&self) -> bool {
+    self.timestamps.is_empty() && self.samples.is_empty()
+  }
+}
