@@ -119,10 +119,7 @@ extern "C" {
   /// - on success, a C pointer to a `tm` struct
   /// - on error, `NULL`
   pub fn get_date_and_time(idx: c_int) -> *const tm;
-  // ----------------------------------------------------------------------- //
 
-  // SESSION INFORMATION FUNCTIONS ----------------------------------------- //
-  //
   /// Get number of laps contained in a drk/xrk file
   ///
   /// # Arguments

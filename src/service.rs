@@ -2,7 +2,7 @@
 //
 // Author: Florian Eich <florian@bmc-labs.com>
 
-use super::{Fubar, Result};
+use super::{ensure, fubar, Fubar, Result};
 
 use std::{ffi::{CStr, CString},
           os::raw::c_char,
@@ -11,14 +11,15 @@ use std::{ffi::{CStr, CString},
 
 /// Converts a `*const c_char`, i.e. a raw C string (`const char *` in C), to a
 /// Rust `std::ffi::CString`, which is owned. This guarantees lifetime safety.
-pub fn strptr_to_cstring(strptr: *const c_char) -> CString {
-  unsafe { CStr::from_ptr(strptr) }.to_owned()
+pub fn strptr_to_cstring(strptr: *const c_char) -> Result<CString> {
+  ensure!(!strptr.is_null(), "error: fetched null pointer");
+  Ok(unsafe { CStr::from_ptr(strptr) }.to_owned())
 }
 
 /// Convenience function to convert directly to Rust's `String` type from a
 /// `*const c_char`, i.e. a raw C string (`const char *` in C).
 pub fn strptr_to_string(strptr: *const c_char) -> Result<String> {
-  Ok(strptr_to_cstring(strptr).to_str()?.to_owned())
+  Ok(strptr_to_cstring(strptr)?.to_str()?.to_owned())
 }
 
 /// Convenience function to convert directly from a Rust `&str` to a
@@ -51,7 +52,7 @@ mod tests {
     let as_strref = "warblgarbl";
     let as_cstring = CString::new(as_strref).unwrap();
 
-    let conv_to_cstring = strptr_to_cstring(as_cstring.as_ptr());
+    let conv_to_cstring = strptr_to_cstring(as_cstring.as_ptr()).unwrap();
     assert_eq!(as_strref, conv_to_cstring.to_str().unwrap());
 
     let conv_to_string = strptr_to_string(as_cstring.as_ptr()).unwrap();

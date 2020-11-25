@@ -5,6 +5,7 @@
 use super::{ensure,
             fubar,
             fubar::Result,
+            storage::LapInfo,
             service as srv,
             xdrkbindings as aim};
 
@@ -42,10 +43,10 @@ impl XdrkFile {
     let path = path.to_owned();
     let idx = unsafe { aim::open_file(srv::path_to_cstring(&path)?.as_ptr()) };
 
-    match 0.cmp(&idx) {
-      Ordering::Less => Ok(Self { path, idx }),
+    match idx.cmp(&0) {
+      Ordering::Greater => Ok(Self { path, idx }),
       Ordering::Equal => fubar!("file is open but can't be parsed"),
-      Ordering::Greater => fubar!("an error occurred"),
+      Ordering::Less => fubar!("an error occurred"),
     }
   }
 
@@ -100,9 +101,6 @@ impl XdrkFile {
 // DESTRUCTOR - CLOSES FILE ------------------------------------------------ //
 impl Drop for XdrkFile {
   /// Close the drk/xrk file on `XdrkFile` destruction
-  ///
-  /// # Returns
-  /// an empty `Ok()` on success.
   fn drop(&mut self) {
     unsafe { aim::close_file_i(self.idx) };
   }
@@ -152,16 +150,186 @@ impl XdrkFile {
 
   /// Get session date and time
   ///
-  /// # Return
+  /// # Returns
   /// - a `NaiveDateTime` object indicating when this file was produced
   pub fn date_time(&self) -> Result<NaiveDateTime> {
-    let tm = unsafe { *aim::get_date_and_time(self.idx) };
+    let tm: *const aim::tm = unsafe { aim::get_date_and_time(self.idx) };
+    ensure!(!tm.is_null(), "could not fetch datetime object");
+
+    let tm = unsafe { *tm };
     Ok(NaiveDate::from_ymd(tm.tm_year + 1900,
                            (tm.tm_mon + 1) as u32,
                            tm.tm_mday as u32).and_hms(tm.tm_hour as u32,
                                                       tm.tm_min as u32,
                                                       tm.tm_sec as u32))
   }
+
+  /// Get number of laps contained in drk/xrk file
+  ///
+  /// # Returns
+  /// - the number of laps
+  pub fn laps_count(&self) -> Result<usize> {
+    let count = unsafe { aim::get_laps_count(self.idx) };
+    match count.cmp(&0) {
+      Ordering::Greater => Ok(count as usize),
+      Ordering::Equal => fubar!("file contains 0 laps"),
+      Ordering::Less => fubar!("error getting lap count"),
+    }
+  }
+
+  /// Get lap info
+  ///
+  /// # Arguments
+  /// - `lap_idx`: index of the lap in question
+  ///
+  /// # Returns
+  /// - a `LapInfo` object, which contains
+  /// - start time since start of session in seconds
+  /// - duration, a.k.a laptime
+  pub fn lap_info(&self, lap_idx: usize) -> Result<LapInfo> {
+    let (mut start, mut duration) = (0.0f64, 0.0f64);
+
+    let err_code = unsafe {
+      aim::get_lap_info(self.idx, lap_idx as i32, &mut start, &mut duration)
+    };
+    ensure!(err_code == 1, "could not fetch lap info");
+
+    Ok(LapInfo::new(start, duration))
+  }
+}
+
+// CHANNEL INFORMATION FUNCTIONS ------------------------------------------- //
+impl XdrkFile {
+  /// Get number of channels contained in a drk/xrk file
+  ///
+  /// # Returns
+  /// - the number of channels
+  pub fn channels_count(&self) -> Result<usize> {
+    let count = unsafe { aim::get_channels_count(self.idx) };
+    match count.cmp(&0) {
+      Ordering::Greater => Ok(count as usize),
+      Ordering::Equal => fubar!("file contains 0 channels"),
+      Ordering::Less => fubar!("error getting channel count"),
+    }
+  }
+
+  /// Get channel name
+  ///
+  /// # Arguments
+  /// - `channel_idx`: the channel index
+  ///
+  /// # Returns
+  /// - on success, a C string with the channel name
+  /// - on error, `NULL`
+  pub fn channel_name(&self, channel_idx: usize) -> Result<String> {
+    srv::strptr_to_string(unsafe {
+      aim::get_channel_name(self.idx, channel_idx as i32)
+    })
+  }
+
+  /// Get channel units
+  ///
+  /// # Arguments
+  /// - `channel_idx`: the channel index
+  ///
+  /// # Returns
+  /// - a `String` containing channel units
+  pub fn channel_units(&self, channel_idx: usize) -> Result<String> {
+    srv::strptr_to_string(unsafe {
+      aim::get_channel_units(self.idx, channel_idx as i32)
+    })
+  }
+
+  /// Get number of datapoints in channel
+  ///
+  /// # Arguments
+  /// - `channel_idx`: the channel index
+  ///
+  /// # Returns
+  /// - the number of datapoints in the channel
+  ///
+  /// - on success, the number of datapoints in the channel
+  /// - `0` if the channel contains no datapoints (theoretically impossible)
+  /// - on error, a negative value
+  pub fn channel_samples_count(&self, channel_idx: usize) -> Result<usize> {
+    let count = unsafe {
+      aim::get_channel_samples_count(self.idx, channel_idx as i32)
+    };
+
+    match count.cmp(&0) {
+      Ordering::Greater => Ok(count as usize),
+      Ordering::Equal => fubar!("channel contains 0 samples"),
+      Ordering::Less => fubar!("error getting channel samples count"),
+    }
+  }
+
+  /*
+  /// Get datapoints in channel
+  ///
+  /// # Arguments
+  /// - `idxf`: the internal file index returned by the `open_file` function
+  /// - `idxc`: the channel index
+  /// - `ptimes`: a pointer to **a buffer** of `mut f64` where timestamps of
+  /// datapoints are stored
+  /// - `pvalues`: a pointer to **a buffer** of `mut f64` where datapoints are
+  /// stored
+  /// - `cnt`: the number of datapoints to be read (find using the
+  /// `get_channel_samples_count` function)
+  ///
+  /// # Returns
+  /// - on success, the number of datapoints in the channel
+  /// - `0` if the `cnt` argument does not match the number of datapoints OR if
+  /// the channel contains no datapoints (theoretically impossible)
+  /// - on error, a negative value
+  pub fn get_channel_samples(idxf: c_int,
+                             idxc: c_int,
+                             ptimes: *mut f64,
+                             pvalues: *mut f64,
+                             cnt: c_int)
+                             -> c_int;
+
+  /// Get number of datapoints in channel in a given lap
+  ///
+  /// # Arguments
+  /// - `idxf`: the internal file index returned by the `open_file` function
+  /// - `idxl`: the lap index
+  /// - `idxc`: the channel index
+  ///
+  /// # Returns
+  /// - on success, the number of datapoints in the channel in the lap
+  /// - `0` if the channel contains no datapoints (theoretically impossible)
+  /// - on error, a negative value
+  pub fn get_lap_channel_samples_count(idxf: c_int,
+                                       idxl: c_int,
+                                       idxc: c_int)
+                                       -> c_int;
+
+  /// Get datapoints in channel in a given lap
+  ///
+  /// # Arguments
+  /// - `idxf`: the internal file index returned by the `open_file` function
+  /// - `idxl`: the lap index
+  /// - `idxc`: the channel index
+  /// - `ptimes`: a pointer to **a buffer** of `mut f64` where timestamps of
+  /// datapoints are stored
+  /// - `pvalues`: a pointer to **a buffer** of `mut f64` where datapoints are
+  /// stored
+  /// - `cnt`: the number of datapoints to be read (find using the
+  /// `get_channel_samples_count` function)
+  ///
+  /// # Returns
+  /// - on success, the number of datapoints in the channel
+  /// - `0` if the `cnt` argument does not match the number of datapoints OR if
+  /// the channel contains no datapoints (theoretically impossible)
+  /// - on error, a negative value
+  pub fn get_lap_channel_samples(idxf: c_int,
+                                 idxl: c_int,
+                                 idxc: c_int,
+                                 ptimes: *mut f64,
+                                 pvalues: *mut f64,
+                                 cnt: c_int)
+                                 -> c_int;
+  */
 }
 
 // META FUNCTIONS ---------------------------------------------------------- //
@@ -245,6 +413,28 @@ mod tests {
     assert_eq!("Q3", &xrk_file.venue_type_name().unwrap());
     assert_eq!(NaiveDate::from_ymd(2020, 11, 14).and_hms(16, 49, 39),
                xrk_file.date_time().unwrap());
+
+    assert_eq!(4, xrk_file.laps_count().unwrap());
+    assert_eq!(LapInfo::new(383.258, 170.488), xrk_file.lap_info(2).unwrap());
+
+    // CHANNEL INFORMATION FUNCTIONS --------------------------------------- //
+    assert_eq!(40, xrk_file.channels_count().unwrap());
+
+    assert_eq!("Logger Temperature", &xrk_file.channel_name(0).unwrap());
+    assert_eq!("pManifoldScrut", &xrk_file.channel_name(2).unwrap());
+    assert_eq!("fEngRpm", &xrk_file.channel_name(15).unwrap());
+
+    assert_eq!("C", &xrk_file.channel_units(0).unwrap());
+    assert_eq!("bar", &xrk_file.channel_units(2).unwrap());
+    assert_eq!("rpm", &xrk_file.channel_units(15).unwrap());
+
+    assert_eq!(553, xrk_file.channel_samples_count(0).unwrap());
+    assert_eq!(57980, xrk_file.channel_samples_count(2).unwrap());
+    assert_eq!(57952, xrk_file.channel_samples_count(15).unwrap());
+
+    for i in 0..40 {
+      println!("{:#?}", xrk_file.channel_samples_count(i).unwrap());
+    }
   }
 
   #[test]
