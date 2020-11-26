@@ -20,7 +20,8 @@ pages:
     - rust
   script:
     - cargo doc --no-deps
-    - mv target/doc/xdrkrs public
+    - mv target/doc public
+    - echo '<meta http-equiv="refresh" content="0; url=xdrkrs">' > public/index.html
   artifacts:
     paths:
       - public
