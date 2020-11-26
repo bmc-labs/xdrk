@@ -6,7 +6,7 @@
 name = "xdrkrs"
 description = "Library to open XRK and DRK files, produced by AiM devices"
 
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Florian Eich <florian@bmc-labs.com>"]
 
 edition = "2018"
