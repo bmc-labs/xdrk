@@ -212,28 +212,17 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let count = self.channel_samples_count(channel_idx)?;
-
-    let mut timestamps = Vec::with_capacity(count);
-    let mut samples = Vec::with_capacity(count);
-
-    let timestamps_ptr = timestamps.as_mut_ptr();
-    let samples_ptr = samples.as_mut_ptr();
-
+    let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let read = unsafe {
       aim::get_channel_samples(self.idx,
                                channel_idx as i32,
-                               timestamps_ptr,
-                               samples_ptr,
+                               timestamps.as_mut_ptr(),
+                               samples.as_mut_ptr(),
                                count as i32)
     };
     ensure!(read == count as i32, "error reading channel samples");
 
-    unsafe {
-      timestamps.set_len(count);
-      samples.set_len(count);
-    }
-
-    Ok(ChannelData::from_ts(timestamps, samples))
+    Ok(ChannelData::from_tsc(timestamps, samples, count))
   }
 
   /// For lap with index `lap_idx` and channel with index `channel_idx`,
@@ -276,29 +265,18 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let count = self.lap_channel_samples_count(lap_idx, channel_idx)?;
-
-    let mut timestamps = Vec::with_capacity(count);
-    let mut samples = Vec::with_capacity(count);
-
-    let timestamps_ptr = timestamps.as_mut_ptr();
-    let samples_ptr = samples.as_mut_ptr();
-
+    let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let read = unsafe {
       aim::get_lap_channel_samples(self.idx,
                                    lap_idx as i32,
                                    channel_idx as i32,
-                                   timestamps_ptr,
-                                   samples_ptr,
+                                   timestamps.as_mut_ptr(),
+                                   samples.as_mut_ptr(),
                                    count as i32)
     };
-    ensure!(read == count as i32, "error reading channel samples");
+    ensure!(read == count as i32, "error reading lap channel samples");
 
-    unsafe {
-      timestamps.set_len(count);
-      samples.set_len(count);
-    }
-
-    Ok(ChannelData::from_ts(timestamps, samples))
+    Ok(ChannelData::from_tsc(timestamps, samples, count))
   }
 
   // GPS INFORMATION FUNCTIONS --------------------------------------------- //
@@ -373,28 +351,17 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let count = self.gps_channel_samples_count(channel_idx)?;
-
-    let mut timestamps = Vec::with_capacity(count);
-    let mut samples = Vec::with_capacity(count);
-
-    let timestamps_ptr = timestamps.as_mut_ptr();
-    let samples_ptr = samples.as_mut_ptr();
-
+    let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let read = unsafe {
       aim::get_GPS_channel_samples(self.idx,
                                    channel_idx as i32,
-                                   timestamps_ptr,
-                                   samples_ptr,
+                                   timestamps.as_mut_ptr(),
+                                   samples.as_mut_ptr(),
                                    count as i32)
     };
     ensure!(read == count as i32, "error reading GPS channel samples");
 
-    unsafe {
-      timestamps.set_len(count);
-      samples.set_len(count);
-    }
-
-    Ok(ChannelData::from_ts(timestamps, samples))
+    Ok(ChannelData::from_tsc(timestamps, samples, count))
   }
 
   /// For lap with index `lap_idx` and GPS channel with index `channel_idx`,
@@ -420,7 +387,7 @@ impl XdrkFile {
     }
   }
 
-  /// For lap with index `lap_idx` and channel with index `channel_idx`,
+  /// For lap with index `lap_idx` and GPS channel with index `channel_idx`,
   /// request the samples contained in this `XdrkFile`.
   ///
   /// The data will be returned in the form of a `ChannelData` object, which
@@ -437,32 +404,21 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let count = self.lap_gps_channel_samples_count(lap_idx, channel_idx)?;
-
-    let mut timestamps = Vec::with_capacity(count);
-    let mut samples = Vec::with_capacity(count);
-
-    let timestamps_ptr = timestamps.as_mut_ptr();
-    let samples_ptr = samples.as_mut_ptr();
-
+    let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let read = unsafe {
       aim::get_lap_GPS_channel_samples(self.idx,
                                        lap_idx as i32,
                                        channel_idx as i32,
-                                       timestamps_ptr,
-                                       samples_ptr,
+                                       timestamps.as_mut_ptr(),
+                                       samples.as_mut_ptr(),
                                        count as i32)
     };
     ensure!(read == count as i32, "error reading GPS channel samples");
 
-    unsafe {
-      timestamps.set_len(count);
-      samples.set_len(count);
-    }
-
-    Ok(ChannelData::from_ts(timestamps, samples))
+    Ok(ChannelData::from_tsc(timestamps, samples, count))
   }
 
-  /// On success, the `Result` contains the number of GPS channels in this
+  /// On success, the `Result` contains the number of GPS raw channels in this
   /// `XdrkFile`.
   pub fn gps_raw_channels_count(&self) -> Result<usize> {
     let count = unsafe { aim::get_GPS_raw_channels_count(self.idx) };
@@ -473,7 +429,7 @@ impl XdrkFile {
     }
   }
 
-  /// For GPS channel with index `channel_idx`, request the channel name.
+  /// For GPS raw channel with index `channel_idx`, request the channel name.
   pub fn gps_raw_channel_name(&self, channel_idx: usize) -> Result<String> {
     ensure!(channel_idx < self.gps_raw_channels_count()?,
             "channel_idx out of range");
@@ -483,7 +439,8 @@ impl XdrkFile {
     })
   }
 
-  /// For GPS channel with index `channel_idx`, request the GPS channel unit.
+  /// For GPS raw channel with index `channel_idx`, request the GPS channel
+  /// unit.
   pub fn gps_raw_channel_unit(&self, channel_idx: usize) -> Result<String> {
     ensure!(channel_idx < self.gps_raw_channels_count()?,
             "channel_idx out of range");
@@ -493,8 +450,8 @@ impl XdrkFile {
     })
   }
 
-  /// For GPS channel with index `channel_idx`, request the number of samples
-  /// contained in this `XdrkFile`.
+  /// For GPS raw channel with index `channel_idx`, request the number of
+  /// samples contained in this `XdrkFile`.
   pub fn gps_raw_channel_samples_count(&self,
                                        channel_idx: usize)
                                        -> Result<usize>
@@ -513,8 +470,8 @@ impl XdrkFile {
     }
   }
 
-  /// For GPS channel with index `channel_idx`, request the samples contained
-  /// in this `XdrkFile`.
+  /// For GPS raw channel with index `channel_idx`, request the samples
+  /// contained in this `XdrkFile`.
   ///
   /// The data will be returned in the form of a `ChannelData` object, which
   /// contains the data as a set of timestamps (the `timestamps()` getter
@@ -528,32 +485,22 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let count = self.gps_raw_channel_samples_count(channel_idx)?;
-
-    let mut timestamps = Vec::with_capacity(count);
-    let mut samples = Vec::with_capacity(count);
-
-    let timestamps_ptr = timestamps.as_mut_ptr();
-    let samples_ptr = samples.as_mut_ptr();
-
+    let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let read = unsafe {
       aim::get_GPS_raw_channel_samples(self.idx,
                                        channel_idx as i32,
-                                       timestamps_ptr,
-                                       samples_ptr,
+                                       timestamps.as_mut_ptr(),
+                                       samples.as_mut_ptr(),
                                        count as i32)
     };
     ensure!(read == count as i32, "error reading GPS channel samples");
 
-    unsafe {
-      timestamps.set_len(count);
-      samples.set_len(count);
-    }
-
-    Ok(ChannelData::from_ts(timestamps, samples))
+    Ok(ChannelData::from_tsc(timestamps, samples, count))
   }
 
-  /// For lap with index `lap_idx` and GPS channel with index `channel_idx`,
-  /// request the number of samples contained in this `XdrkFile`.
+  /// For lap with index `lap_idx` and GPS raw channel with index
+  /// `channel_idx`, request the number of samples contained in this
+  /// `XdrkFile`.
   pub fn lap_gps_raw_channel_samples_count(&self,
                                            lap_idx: usize,
                                            channel_idx: usize)
@@ -575,8 +522,8 @@ impl XdrkFile {
     }
   }
 
-  /// For lap with index `lap_idx` and channel with index `channel_idx`,
-  /// request the samples contained in this `XdrkFile`.
+  /// For lap with index `lap_idx` and GPS raw channel with index
+  /// `channel_idx`, request the samples contained in this `XdrkFile`.
   ///
   /// The data will be returned in the form of a `ChannelData` object, which
   /// contains the data as a set of timestamps (the `timestamps()` getter
@@ -592,29 +539,18 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let count = self.lap_gps_raw_channel_samples_count(lap_idx, channel_idx)?;
-
-    let mut timestamps = Vec::with_capacity(count);
-    let mut samples = Vec::with_capacity(count);
-
-    let timestamps_ptr = timestamps.as_mut_ptr();
-    let samples_ptr = samples.as_mut_ptr();
-
+    let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let read = unsafe {
       aim::get_lap_GPS_raw_channel_samples(self.idx,
                                            lap_idx as i32,
                                            channel_idx as i32,
-                                           timestamps_ptr,
-                                           samples_ptr,
+                                           timestamps.as_mut_ptr(),
+                                           samples.as_mut_ptr(),
                                            count as i32)
     };
     ensure!(read == count as i32, "error reading GPS channel samples");
 
-    unsafe {
-      timestamps.set_len(count);
-      samples.set_len(count);
-    }
-
-    Ok(ChannelData::from_ts(timestamps, samples))
+    Ok(ChannelData::from_tsc(timestamps, samples, count))
   }
 
   // META FUNCTIONS -------------------------------------------------------- //

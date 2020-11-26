@@ -26,7 +26,20 @@ pub struct ChannelData {
 }
 
 impl ChannelData {
-  pub fn from_ts(timestamps: Vec<f64>, samples: Vec<f64>) -> Self {
+  pub fn allocate(capacity: usize) -> (Vec<f64>, Vec<f64>) {
+    (Vec::with_capacity(capacity), Vec::with_capacity(capacity))
+  }
+
+  pub fn from_tsc(mut timestamps: Vec<f64>,
+                  mut samples: Vec<f64>,
+                  count: usize)
+                  -> Self
+  {
+    unsafe {
+      timestamps.set_len(count);
+      samples.set_len(count);
+    }
+
     Self { timestamps,
            samples }
   }
