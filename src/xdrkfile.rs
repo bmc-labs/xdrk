@@ -462,6 +462,161 @@ impl XdrkFile {
     Ok(ChannelData::from_ts(timestamps, samples))
   }
 
+  /// On success, the `Result` contains the number of GPS channels in this
+  /// `XdrkFile`.
+  pub fn gps_raw_channels_count(&self) -> Result<usize> {
+    let count = unsafe { aim::get_GPS_raw_channels_count(self.idx) };
+    match count.cmp(&0) {
+      Ordering::Greater => Ok(count as usize),
+      Ordering::Equal => fubar!("file contains 0 GPS channels"),
+      Ordering::Less => fubar!("error getting GPS channel count"),
+    }
+  }
+
+  /// For GPS channel with index `channel_idx`, request the channel name.
+  pub fn gps_raw_channel_name(&self, channel_idx: usize) -> Result<String> {
+    ensure!(channel_idx < self.gps_raw_channels_count()?,
+            "channel_idx out of range");
+
+    srv::strptr_to_string(unsafe {
+      aim::get_GPS_raw_channel_name(self.idx, channel_idx as i32)
+    })
+  }
+
+  /// For GPS channel with index `channel_idx`, request the GPS channel unit.
+  pub fn gps_raw_channel_unit(&self, channel_idx: usize) -> Result<String> {
+    ensure!(channel_idx < self.gps_raw_channels_count()?,
+            "channel_idx out of range");
+
+    srv::strptr_to_string(unsafe {
+      aim::get_GPS_raw_channel_units(self.idx, channel_idx as i32)
+    })
+  }
+
+  /// For GPS channel with index `channel_idx`, request the number of samples
+  /// contained in this `XdrkFile`.
+  pub fn gps_raw_channel_samples_count(&self,
+                                       channel_idx: usize)
+                                       -> Result<usize>
+  {
+    ensure!(channel_idx < self.gps_raw_channels_count()?,
+            "channel_idx out of range");
+
+    let count = unsafe {
+      aim::get_GPS_raw_channel_samples_count(self.idx, channel_idx as i32)
+    };
+
+    match count.cmp(&0) {
+      Ordering::Greater => Ok(count as usize),
+      Ordering::Equal => fubar!("GPS channel contains 0 samples"),
+      Ordering::Less => fubar!("error getting GPS channel samples count"),
+    }
+  }
+
+  /// For GPS channel with index `channel_idx`, request the samples contained
+  /// in this `XdrkFile`.
+  ///
+  /// The data will be returned in the form of a `ChannelData` object, which
+  /// contains the data as a set of timestamps (the `timestamps()` getter
+  /// returns a `&Vec<f64>`) and a corresponding set of samples (the
+  /// `samples()` getter returns another `&Vec<f64>`).
+  pub fn gps_raw_channel_samples(&self,
+                                 channel_idx: usize)
+                                 -> Result<ChannelData>
+  {
+    ensure!(channel_idx < self.gps_raw_channels_count()?,
+            "channel_idx out of range");
+
+    let count = self.gps_raw_channel_samples_count(channel_idx)?;
+
+    let mut timestamps = Vec::with_capacity(count);
+    let mut samples = Vec::with_capacity(count);
+
+    let timestamps_ptr = timestamps.as_mut_ptr();
+    let samples_ptr = samples.as_mut_ptr();
+
+    let read = unsafe {
+      aim::get_GPS_raw_channel_samples(self.idx,
+                                       channel_idx as i32,
+                                       timestamps_ptr,
+                                       samples_ptr,
+                                       count as i32)
+    };
+    ensure!(read == count as i32, "error reading GPS channel samples");
+
+    unsafe {
+      timestamps.set_len(count);
+      samples.set_len(count);
+    }
+
+    Ok(ChannelData::from_ts(timestamps, samples))
+  }
+
+  /// For lap with index `lap_idx` and GPS channel with index `channel_idx`,
+  /// request the number of samples contained in this `XdrkFile`.
+  pub fn lap_gps_raw_channel_samples_count(&self,
+                                           lap_idx: usize,
+                                           channel_idx: usize)
+                                           -> Result<usize>
+  {
+    ensure!(lap_idx < self.laps_count()?, "lap_idx out of range");
+    ensure!(channel_idx < self.gps_raw_channels_count()?,
+            "channel_idx out of range");
+
+    let count = unsafe {
+      aim::get_lap_GPS_raw_channel_samples_count(self.idx,
+                                                 lap_idx as i32,
+                                                 channel_idx as i32)
+    };
+    match count.cmp(&0) {
+      Ordering::Greater => Ok(count as usize),
+      Ordering::Equal => fubar!("GPS channel contains 0 samples in this lap"),
+      Ordering::Less => fubar!("error getting lap GPS channel samples count"),
+    }
+  }
+
+  /// For lap with index `lap_idx` and channel with index `channel_idx`,
+  /// request the samples contained in this `XdrkFile`.
+  ///
+  /// The data will be returned in the form of a `ChannelData` object, which
+  /// contains the data as a set of timestamps (the `timestamps()` getter
+  /// returns a `&Vec<f64>`) and a corresponding set of samples (the
+  /// `samples()` getter returns another `&Vec<f64>`).
+  pub fn lap_gps_raw_channel_samples(&self,
+                                     lap_idx: usize,
+                                     channel_idx: usize)
+                                     -> Result<ChannelData>
+  {
+    ensure!(lap_idx < self.laps_count()?, "lap_idx out of range");
+    ensure!(channel_idx < self.gps_raw_channels_count()?,
+            "channel_idx out of range");
+
+    let count = self.lap_gps_raw_channel_samples_count(lap_idx, channel_idx)?;
+
+    let mut timestamps = Vec::with_capacity(count);
+    let mut samples = Vec::with_capacity(count);
+
+    let timestamps_ptr = timestamps.as_mut_ptr();
+    let samples_ptr = samples.as_mut_ptr();
+
+    let read = unsafe {
+      aim::get_lap_GPS_raw_channel_samples(self.idx,
+                                           lap_idx as i32,
+                                           channel_idx as i32,
+                                           timestamps_ptr,
+                                           samples_ptr,
+                                           count as i32)
+    };
+    ensure!(read == count as i32, "error reading GPS channel samples");
+
+    unsafe {
+      timestamps.set_len(count);
+      samples.set_len(count);
+    }
+
+    Ok(ChannelData::from_ts(timestamps, samples))
+  }
+
   // META FUNCTIONS -------------------------------------------------------- //
   /// Library compilation date.
   pub fn library_date() -> Result<NaiveDate> {
