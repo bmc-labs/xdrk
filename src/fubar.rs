@@ -6,13 +6,12 @@ use serde::Deserialize;
 use std::{error, ffi, fmt, result, str};
 
 
-/// libanna's result type `Result` will work with any error type
-/// implementing the `std::error::Error` trait.
+/// Type alias for a `Result` using `Fubar` as its error type.
 pub type Result<T> = result::Result<T, Fubar>;
 
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
-/// Simple error to be used throughout libanna to bubble errors back to the
+/// Error to be used throughout `xdrkrs` to bubble errors back to the
 /// respective main functions.
 ///
 /// It is strongly recommended to use `Fubar` through the `fubar!` macro,

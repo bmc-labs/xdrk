@@ -5,9 +5,10 @@
 use std::os::raw::{c_char, c_int};
 
 
+/// Binding to C tm struct storing datetime info (defined in `time.h`)
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-/// Binding to C tm struct storing datetime info (defined in `time.h`)
+#[doc(hidden)]
 pub struct tm {
   pub tm_sec:   c_int, // seconds, range 0 to 59
   pub tm_min:   c_int, // minutes, range 0 to 59
@@ -22,6 +23,7 @@ pub struct tm {
 
 
 #[allow(dead_code)]
+#[doc(hidden)]
 extern "C" {
   // FILE OPENING / CLOSING FUNCTIONS -------------------------------------- //
   //

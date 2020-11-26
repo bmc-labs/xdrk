@@ -16,6 +16,7 @@ use std::{cmp::Ordering,
           path::{Path, PathBuf}};
 
 
+/// Holds access information for the file and provides access to it.
 #[derive(Debug, CopyGetters, Getters)]
 pub struct XdrkFile {
   #[getset(get = "pub")]
