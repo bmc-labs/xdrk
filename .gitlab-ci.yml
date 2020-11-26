@@ -20,16 +20,9 @@ pages:
     - rust
   script:
     - cargo doc --no-deps
-    - mv target/doc public
-    - echo '<meta http-equiv="refresh" content="0; url={{ LIBRARY NAME }}">' > public/index.html
+    - mv target/doc/xdrkrs public
   artifacts:
     paths:
       - public
   only:
     - trunk
-
-cache:
-  paths:
-    - apt/
-    - cargo/
-    - target/
