@@ -461,14 +461,26 @@ mod tests {
 
     assert_eq!(162, xrk_file.lap_channel_samples_count(2, 0).unwrap());
 
-    assert_eq!(false, xrk_file.lap_channel_samples(2, 0).unwrap().is_empty());
+    assert_eq!(false,
+               xrk_file.lap_channel_samples(2, 0).unwrap().is_empty());
     println!("{:#?}", xrk_file.lap_channel_samples(2, 0).unwrap());
   }
 
   #[test]
   fn meta_fn() {
-    let date = NaiveDate::from_ymd(2020, 1, 24);
-    let time = NaiveTime::from_hms(16, 36, 19);
+    let (date, time) = {
+      #[cfg(target_family = "unix")]
+      let date = NaiveDate::from_ymd(2020, 1, 24);
+      #[cfg(target_family = "windows")]
+      let date = NaiveDate::from_ymd(2018, 8, 1);
+
+      #[cfg(target_family = "unix")]
+      let time = NaiveTime::from_hms(16, 36, 19);
+      #[cfg(target_family = "windows")]
+      let time = NaiveTime::from_hms(12, 22, 53);
+
+      (date, time)
+    };
 
     assert_eq!(date.and_time(time), XdrkFile::library_datetime().unwrap());
     assert_eq!(date, XdrkFile::library_date().unwrap());
