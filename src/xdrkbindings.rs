@@ -2,7 +2,6 @@
 //
 // Author: Florian Eich <florian@bmc-labs.com>
 
-
 use std::os::raw::{c_char, c_int};
 
 

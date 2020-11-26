@@ -39,7 +39,7 @@ impl XdrkFile {
     ensure!(path.exists()
             && path.is_file()
             && path.extension().unwrap_or_default() == "xrk",
-            "path does not exist or not a file");
+            "path does not exist or not a valid file");
 
     let path = path.to_owned();
     let idx = unsafe { aim::open_file(srv::path_to_cstring(&path)?.as_ptr()) };
@@ -650,7 +650,6 @@ mod tests {
 
     assert_eq!(false,
                xrk_file.lap_channel_samples(2, 0).unwrap().is_empty());
-    println!("{:#?}", xrk_file.lap_channel_samples(2, 0).unwrap());
   }
 
   #[test]

@@ -1,9 +1,6 @@
 // Copyright 2020 bmc::labs Gmbh. All rights reserved.
 //
-// Authors:
-//   Florian Eich <florian@bmc-labs.com>
-//   Jonas Reitemeyer <jonas@bmc-labs.com>
-//   Jannik Schütz <jannik@bmc-labs.com>
+// Author: Florian Eich <florian@bmc-labs.com>
 
 use serde::Deserialize;
 use std::{error, ffi, fmt, result, str};
