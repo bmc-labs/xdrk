@@ -24,16 +24,17 @@ pub struct XdrkFile {
   idx:  i32,
 }
 
+// DESTRUCTOR - CLOSES FILE ------------------------------------------------ //
+impl Drop for XdrkFile {
+  /// Close the drk/xrk file on `XdrkFile` destruction
+  fn drop(&mut self) {
+    unsafe { aim::close_file_i(self.idx) };
+  }
+}
 
-// FILE OPENING / CLOSING FUNCTIONS ---------------------------------------- //
 impl XdrkFile {
-  /// Open a drk/xrk file
-  ///
-  /// # Arguments
-  /// - `path`: full path to the file to be opened
-  ///
-  /// # Returns
-  /// a valid `XdrkFile` object.
+  // FILE OPENING / CLOSING FUNCTIONS -------------------------------------- //
+  /// Loads a drk/xrk file and creates an `XrdkFile` object.
   pub fn load(path: &Path) -> Result<Self> {
     ensure!(path.exists()
             && path.is_file()
@@ -50,18 +51,13 @@ impl XdrkFile {
     }
   }
 
-  /// Close the drk/xrk file by path
+  /// Close the drk/xrk file by path.
   ///
   /// THIS SHOULD NEVER BE USED DIRECTLY AND IS ONLY PROVIDED AS AN INTERFACE
   /// TO THE UNDERLYING LIBRARY FUNCTION. `XdrkFile` IMPLEMENTS THE `Drop`
   /// TRAIT TO CLOSE FILES, I.E. FILES ARE CLOSED WHEN THE `XdrkFile` OBJECT
   /// GOES OUT OF SCOPE.
-  ///
-  /// # Arguments
-  /// - `path`: full path to the file to be closed
-  ///
-  /// # Returns
-  /// an empty `Ok()` on success.
+  #[doc(hidden)]
   pub fn close_by_path(&self, path: &Path) -> Result<()> {
     ensure!(path == self.path,
             "file '{}' is not associated file",
@@ -76,18 +72,13 @@ impl XdrkFile {
     Ok(())
   }
 
-  /// Close the drk/xrk file by index
+  /// Close the drk/xrk file by index.
   ///
   /// THIS SHOULD NEVER BE USED DIRECTLY AND IS ONLY PROVIDED AS AN INTERFACE
   /// TO THE UNDERLYING LIBRARY FUNCTION. `XdrkFile` IMPLEMENTS THE `Drop`
   /// TRAIT TO CLOSE FILES, I.E. FILES ARE CLOSED WHEN THE `XdrkFile` OBJECT
   /// GOES OUT OF SCOPE.
-  ///
-  /// # Arguments
-  /// - `idx`: index to the file to be closed
-  ///
-  /// # Returns
-  /// an empty `Ok()` on success.
+  #[doc(hidden)]
   pub fn close_by_index(&self, idx: i32) -> Result<()> {
     ensure!(idx == self.idx, "file '{}' is not associated file", idx);
 
@@ -96,62 +87,30 @@ impl XdrkFile {
 
     Ok(())
   }
-}
 
-// DESTRUCTOR - CLOSES FILE ------------------------------------------------ //
-impl Drop for XdrkFile {
-  /// Close the drk/xrk file on `XdrkFile` destruction
-  fn drop(&mut self) {
-    unsafe { aim::close_file_i(self.idx) };
-  }
-}
-
-// SESSION INFORMATION FUNCTIONS ------------------------------------------- //
-impl XdrkFile {
-  /// Get vehicle info
-  ///
-  /// # Returns
-  /// - a `String` containing vehicle info
+  // SESSION INFORMATION FUNCTIONS ----------------------------------------- //
   pub fn vehicle_name(&self) -> Result<String> {
     srv::strptr_to_string(unsafe { aim::get_vehicle_name(self.idx) })
   }
 
-  /// Get track info
-  ///
-  /// # Returns
-  /// - a `String` containing track info
   pub fn track_name(&self) -> Result<String> {
     srv::strptr_to_string(unsafe { aim::get_track_name(self.idx) })
   }
 
-  /// Get racer info
-  ///
-  /// # Returns
-  /// - a `String` containing racer info
   pub fn racer_name(&self) -> Result<String> {
     srv::strptr_to_string(unsafe { aim::get_racer_name(self.idx) })
   }
 
-  /// Get championship info
-  ///
-  /// # Returns
-  /// - a `String` containing championship info
   pub fn championship_name(&self) -> Result<String> {
     srv::strptr_to_string(unsafe { aim::get_championship_name(self.idx) })
   }
 
-  /// Get venue type info
-  ///
-  /// # Returns
-  /// - a `String` containing venue info
   pub fn venue_type_name(&self) -> Result<String> {
     srv::strptr_to_string(unsafe { aim::get_venue_type_name(self.idx) })
   }
 
-  /// Get session date and time
-  ///
-  /// # Returns
-  /// - a `NaiveDateTime` object indicating when this file was produced
+  /// On success, the `Result` contains a datetime object which defines when
+  /// this `XdrkFile` was recorded.
   pub fn date_time(&self) -> Result<NaiveDateTime> {
     let tm: *const aim::tm = unsafe { aim::get_date_and_time(self.idx) };
     ensure!(!tm.is_null(), "could not fetch datetime object");
@@ -164,10 +123,7 @@ impl XdrkFile {
                                                       tm.tm_sec as u32))
   }
 
-  /// Get number of laps contained in drk/xrk file
-  ///
-  /// # Returns
-  /// - the number of laps
+  /// On success, the `Result` contains the number of laps in this `XdrkFile`.
   pub fn laps_count(&self) -> Result<usize> {
     let count = unsafe { aim::get_laps_count(self.idx) };
     match count.cmp(&0) {
@@ -177,18 +133,17 @@ impl XdrkFile {
     }
   }
 
-  /// Get lap info
+  /// For lap with index `lap_idx`, request `LapInfo`. Returns an error if
+  /// `lap_idx` is out of range (i.e. the `XdrkFile` does not contain a lap
+  /// with that index) or the library calls fails for any reason.
   ///
-  /// # Arguments
-  /// - `lap_idx`: index of the lap in question
-  ///
-  /// # Returns
-  /// - a `LapInfo` object, which contains
-  /// - start time since start of session in seconds
-  /// - duration, a.k.a laptime
+  /// `LapInfo` objects contain the start of the lap within the run recorded in
+  /// this file (via the `start()` getter) and the lap duration (via the
+  /// `duration()` getter).
   pub fn lap_info(&self, lap_idx: usize) -> Result<LapInfo> {
-    let (mut start, mut duration) = (0.0f64, 0.0f64);
+    ensure!(lap_idx < self.laps_count()?, "lap_idx out of range");
 
+    let (mut start, mut duration) = (0.0f64, 0.0f64);
     let err_code = unsafe {
       aim::get_lap_info(self.idx, lap_idx as i32, &mut start, &mut duration)
     };
@@ -196,14 +151,10 @@ impl XdrkFile {
 
     Ok(LapInfo::new(start, duration))
   }
-}
 
-// CHANNEL INFORMATION FUNCTIONS ------------------------------------------- //
-impl XdrkFile {
-  /// Get number of channels contained in a drk/xrk file
-  ///
-  /// # Returns
-  /// - the number of channels
+  // CHANNEL INFORMATION FUNCTIONS ----------------------------------------- //
+  /// On success, the `Result` contains the number of channels in this
+  /// `XdrkFile`.
   pub fn channels_count(&self) -> Result<usize> {
     let count = unsafe { aim::get_channels_count(self.idx) };
     match count.cmp(&0) {
@@ -213,41 +164,32 @@ impl XdrkFile {
     }
   }
 
-  /// Get channel name
-  ///
-  /// # Arguments
-  /// - `channel_idx`: the channel index
-  ///
-  /// # Returns
-  /// - on success, a C string with the channel name
-  /// - on error, `NULL`
+  /// For channel with index `channel_idx`, request the channel name.
   pub fn channel_name(&self, channel_idx: usize) -> Result<String> {
+    ensure!(channel_idx < self.channels_count()?,
+            "channel_idx out of range");
+
     srv::strptr_to_string(unsafe {
       aim::get_channel_name(self.idx, channel_idx as i32)
     })
   }
 
-  /// Get channel units
-  ///
-  /// # Arguments
-  /// - `channel_idx`: the channel index
-  ///
-  /// # Returns
-  /// - a `String` containing channel units
-  pub fn channel_units(&self, channel_idx: usize) -> Result<String> {
+  /// For channel with index `channel_idx`, request the channel unit.
+  pub fn channel_unit(&self, channel_idx: usize) -> Result<String> {
+    ensure!(channel_idx < self.channels_count()?,
+            "channel_idx out of range");
+
     srv::strptr_to_string(unsafe {
       aim::get_channel_units(self.idx, channel_idx as i32)
     })
   }
 
-  /// Get number of samples in channel
-  ///
-  /// # Arguments
-  /// - `channel_idx`: the channel index
-  ///
-  /// # Returns
-  /// - the number of datapoints in the channel
+  /// For channel with index `channel_idx`, request the number of samples
+  /// contained in this `XdrkFile`.
   pub fn channel_samples_count(&self, channel_idx: usize) -> Result<usize> {
+    ensure!(channel_idx < self.channels_count()?,
+            "channel_idx out of range");
+
     let count =
       unsafe { aim::get_channel_samples_count(self.idx, channel_idx as i32) };
 
@@ -258,14 +200,17 @@ impl XdrkFile {
     }
   }
 
-  /// Get samples in channel
+  /// For channel with index `channel_idx`, request the samples contained in
+  /// this `XdrkFile`.
   ///
-  /// # Arguments
-  /// - `channel_idx`: the channel index
-  ///
-  /// # Returns
-  /// - a `ChannelData` object containing the channel samples
+  /// The data will be returned in the form of a `ChannelData` object, which
+  /// contains the data as a set of timestamps (the `timestamps()` getter
+  /// returns a `&Vec<f64>`) and a corresponding set of samples (the
+  /// `samples()` getter returns another `&Vec<f64>`).
   pub fn channel_samples(&self, channel_idx: usize) -> Result<ChannelData> {
+    ensure!(channel_idx < self.channels_count()?,
+            "channel_idx out of range");
+
     let count = self.channel_samples_count(channel_idx)?;
 
     let mut timestamps = Vec::with_capacity(count);
@@ -291,19 +236,17 @@ impl XdrkFile {
     Ok(ChannelData::from_ts(timestamps, samples))
   }
 
-  /// Get number of samples in channel in a given lap
-  ///
-  /// # Arguments
-  /// - `lap_idx`: the lap index
-  /// - `channel_idx`: the channel index
-  ///
-  /// # Returns
-  /// - the number of samples for this channel in this lap
+  /// For lap with index `lap_idx` and channel with index `channel_idx`,
+  /// request the number of samples contained in this `XdrkFile`.
   pub fn lap_channel_samples_count(&self,
                                    lap_idx: usize,
                                    channel_idx: usize)
                                    -> Result<usize>
   {
+    ensure!(lap_idx < self.laps_count()?, "lap_idx out of range");
+    ensure!(channel_idx < self.channels_count()?,
+            "channel_idx out of range");
+
     let count = unsafe {
       aim::get_lap_channel_samples_count(self.idx,
                                          lap_idx as i32,
@@ -316,19 +259,22 @@ impl XdrkFile {
     }
   }
 
-  /// Get datapoints in channel in a given lap
+  /// For lap with index `lap_idx` and channel with index `channel_idx`,
+  /// request the samples contained in this `XdrkFile`.
   ///
-  /// # Arguments
-  /// - `lap_idx`: the lap index
-  /// - `channel_idx`: the channel index
-  ///
-  /// # Returns
-  /// - a `ChannelData` object containing the channel samples for this lap
+  /// The data will be returned in the form of a `ChannelData` object, which
+  /// contains the data as a set of timestamps (the `timestamps()` getter
+  /// returns a `&Vec<f64>`) and a corresponding set of samples (the
+  /// `samples()` getter returns another `&Vec<f64>`).
   pub fn lap_channel_samples(&self,
                              lap_idx: usize,
                              channel_idx: usize)
                              -> Result<ChannelData>
   {
+    ensure!(lap_idx < self.laps_count()?, "lap_idx out of range");
+    ensure!(channel_idx < self.channels_count()?,
+            "channel_idx out of range");
+
     let count = self.lap_channel_samples_count(lap_idx, channel_idx)?;
 
     let mut timestamps = Vec::with_capacity(count);
@@ -354,14 +300,36 @@ impl XdrkFile {
 
     Ok(ChannelData::from_ts(timestamps, samples))
   }
-}
 
-// META FUNCTIONS ---------------------------------------------------------- //
-impl XdrkFile {
-  /// Library compilation date
-  ///
-  /// # Returns
-  /// - the compile date of this library
+  // GPS INFORMATION FUNCTIONS --------------------------------------------- //
+  //
+  // GPS channels are the same channels added to AiM drk files in RS2Analysis,
+  // those that consider vehicle dynamics assuming that the vehicle is
+  // constantly aligned to the trajectory.
+  //
+  /// On success, the `Result` contains the number of GPS channels in this
+  /// `XdrkFile`.
+  pub fn gps_channels_count(&self) -> Result<usize> {
+    let count = unsafe { aim::get_GPS_channels_count(self.idx) };
+    match count.cmp(&0) {
+      Ordering::Greater => Ok(count as usize),
+      Ordering::Equal => fubar!("file contains 0 GPS channels"),
+      Ordering::Less => fubar!("error getting GPS channel count"),
+    }
+  }
+
+  /// For GPS channel with index `channel_idx`, request the channel name.
+  pub fn gps_channel_name(&self, channel_idx: usize) -> Result<String> {
+    ensure!(channel_idx < self.gps_channels_count()?,
+            "channel_idx out of range");
+
+    srv::strptr_to_string(unsafe {
+      aim::get_GPS_channel_name(self.idx, channel_idx as i32)
+    })
+  }
+
+  // META FUNCTIONS -------------------------------------------------------- //
+  /// Library compilation date.
   pub fn library_date() -> Result<NaiveDate> {
     Ok(NaiveDate::parse_from_str(unsafe {
                                    CStr::from_ptr(aim::get_library_date())
@@ -369,10 +337,7 @@ impl XdrkFile {
                                  "%b %d %Y")?)
   }
 
-  /// Library compilation time
-  ///
-  /// # Returns
-  /// - the compile time of this library
+  /// Library compilation time.
   pub fn library_time() -> Result<NaiveTime> {
     Ok(NaiveTime::parse_from_str(unsafe {
                                    CStr::from_ptr(aim::get_library_time())
@@ -380,13 +345,10 @@ impl XdrkFile {
                                  "%H:%M:%S")?)
   }
 
-  /// Library compilation date and time
+  /// Library compilation date and time.
   ///
   /// This is a convenience function wrapping the functions `library_date` and
   /// `library_time` to produce a datetime object.
-  ///
-  /// # Returns
-  /// - the compile datetime of this library
   pub fn library_datetime() -> Result<NaiveDateTime> {
     Ok(Self::library_date()?.and_time(Self::library_time()?))
   }
@@ -449,9 +411,9 @@ mod tests {
     assert_eq!("pManifoldScrut", &xrk_file.channel_name(2).unwrap());
     assert_eq!("fEngRpm", &xrk_file.channel_name(15).unwrap());
 
-    assert_eq!("C", &xrk_file.channel_units(0).unwrap());
-    assert_eq!("bar", &xrk_file.channel_units(2).unwrap());
-    assert_eq!("rpm", &xrk_file.channel_units(15).unwrap());
+    assert_eq!("C", &xrk_file.channel_unit(0).unwrap());
+    assert_eq!("bar", &xrk_file.channel_unit(2).unwrap());
+    assert_eq!("rpm", &xrk_file.channel_unit(15).unwrap());
 
     assert_eq!(553, xrk_file.channel_samples_count(0).unwrap());
     assert_eq!(57980, xrk_file.channel_samples_count(2).unwrap());
