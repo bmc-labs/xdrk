@@ -2,14 +2,12 @@
 //
 // Author: Florian Eich <florian@bmc-labs.com>
 
-use super::{ensure,
-            fubar,
-            fubar::Result,
-            service as srv,
+use super::{service as srv,
             storage::{ChannelData, LapInfo},
             xdrkbindings as aim};
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+use fubar::{decamp, ensure, Result};
 use getset::{CopyGetters, Getters};
 use std::{cmp::Ordering,
           ffi::CStr,
@@ -47,8 +45,8 @@ impl XdrkFile {
 
     match idx.cmp(&0) {
       Ordering::Greater => Ok(Self { path, idx }),
-      Ordering::Equal => fubar!("file is open but can't be parsed"),
-      Ordering::Less => fubar!("an error occurred"),
+      Ordering::Equal => decamp!("file is open but can't be parsed"),
+      Ordering::Less => decamp!("an error occurred"),
     }
   }
 
@@ -129,8 +127,8 @@ impl XdrkFile {
     let count = unsafe { aim::get_laps_count(self.idx) };
     match count.cmp(&0) {
       Ordering::Greater => Ok(count as usize),
-      Ordering::Equal => fubar!("file contains 0 laps"),
-      Ordering::Less => fubar!("error getting lap count"),
+      Ordering::Equal => decamp!("file contains 0 laps"),
+      Ordering::Less => decamp!("error getting lap count"),
     }
   }
 
@@ -160,8 +158,8 @@ impl XdrkFile {
     let count = unsafe { aim::get_channels_count(self.idx) };
     match count.cmp(&0) {
       Ordering::Greater => Ok(count as usize),
-      Ordering::Equal => fubar!("file contains 0 channels"),
-      Ordering::Less => fubar!("error getting channel count"),
+      Ordering::Equal => decamp!("file contains 0 channels"),
+      Ordering::Less => decamp!("error getting channel count"),
     }
   }
 
@@ -196,8 +194,8 @@ impl XdrkFile {
 
     match count.cmp(&0) {
       Ordering::Greater => Ok(count as usize),
-      Ordering::Equal => fubar!("channel contains 0 samples"),
-      Ordering::Less => fubar!("error getting channel samples count"),
+      Ordering::Equal => decamp!("channel contains 0 samples"),
+      Ordering::Less => decamp!("error getting channel samples count"),
     }
   }
 
@@ -244,8 +242,8 @@ impl XdrkFile {
     };
     match count.cmp(&0) {
       Ordering::Greater => Ok(count as usize),
-      Ordering::Equal => fubar!("channel contains 0 samples in this lap"),
-      Ordering::Less => fubar!("error getting lap channel samples count"),
+      Ordering::Equal => decamp!("channel contains 0 samples in this lap"),
+      Ordering::Less => decamp!("error getting lap channel samples count"),
     }
   }
 
@@ -292,8 +290,8 @@ impl XdrkFile {
     let count = unsafe { aim::get_GPS_channels_count(self.idx) };
     match count.cmp(&0) {
       Ordering::Greater => Ok(count as usize),
-      Ordering::Equal => fubar!("file contains 0 GPS channels"),
-      Ordering::Less => fubar!("error getting GPS channel count"),
+      Ordering::Equal => decamp!("file contains 0 GPS channels"),
+      Ordering::Less => decamp!("error getting GPS channel count"),
     }
   }
 
@@ -332,8 +330,8 @@ impl XdrkFile {
 
     match count.cmp(&0) {
       Ordering::Greater => Ok(count as usize),
-      Ordering::Equal => fubar!("GPS channel contains 0 samples"),
-      Ordering::Less => fubar!("error getting GPS channel samples count"),
+      Ordering::Equal => decamp!("GPS channel contains 0 samples"),
+      Ordering::Less => decamp!("error getting GPS channel samples count"),
     }
   }
 
@@ -383,8 +381,8 @@ impl XdrkFile {
     };
     match count.cmp(&0) {
       Ordering::Greater => Ok(count as usize),
-      Ordering::Equal => fubar!("GPS channel contains 0 samples in this lap"),
-      Ordering::Less => fubar!("error getting lap GPS channel samples count"),
+      Ordering::Equal => decamp!("GPS channel contains 0 samples in this lap"),
+      Ordering::Less => decamp!("error getting lap GPS channel samples count"),
     }
   }
 
@@ -425,8 +423,8 @@ impl XdrkFile {
     let count = unsafe { aim::get_GPS_raw_channels_count(self.idx) };
     match count.cmp(&0) {
       Ordering::Greater => Ok(count as usize),
-      Ordering::Equal => fubar!("file contains 0 GPS channels"),
-      Ordering::Less => fubar!("error getting GPS channel count"),
+      Ordering::Equal => decamp!("file contains 0 GPS channels"),
+      Ordering::Less => decamp!("error getting GPS channel count"),
     }
   }
 
@@ -466,8 +464,8 @@ impl XdrkFile {
 
     match count.cmp(&0) {
       Ordering::Greater => Ok(count as usize),
-      Ordering::Equal => fubar!("GPS channel contains 0 samples"),
-      Ordering::Less => fubar!("error getting GPS channel samples count"),
+      Ordering::Equal => decamp!("GPS channel contains 0 samples"),
+      Ordering::Less => decamp!("error getting GPS channel samples count"),
     }
   }
 
@@ -518,8 +516,8 @@ impl XdrkFile {
     };
     match count.cmp(&0) {
       Ordering::Greater => Ok(count as usize),
-      Ordering::Equal => fubar!("GPS channel contains 0 samples in this lap"),
-      Ordering::Less => fubar!("error getting lap GPS channel samples count"),
+      Ordering::Equal => decamp!("GPS channel contains 0 samples in this lap"),
+      Ordering::Less => decamp!("error getting lap GPS channel samples count"),
     }
   }
 

@@ -21,12 +21,10 @@
 //! library, higher level functions for retrieving data are provided, as well
 //! as machinery to synchronize the raw data into matching time series.
 
-mod fubar;
 mod service;
 mod storage;
 mod xdrkbindings;
 mod xdrkfile;
 
-pub use fubar::{Fubar, Result};
 pub use storage::{ChannelData, LapInfo};
 pub use xdrkfile::XdrkFile;
