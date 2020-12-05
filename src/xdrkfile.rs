@@ -6,8 +6,8 @@ use super::{service as srv,
             storage::{ChannelData, LapInfo},
             xdrkbindings as aim};
 
+use anyhow::{anyhow, bail, ensure, Result};
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
-use anyhow::{bail, ensure, Result};
 use getset::{CopyGetters, Getters};
 use std::{cmp::Ordering,
           ffi::CStr,
@@ -35,9 +35,15 @@ impl XdrkFile {
   // FILE OPENING / CLOSING FUNCTIONS -------------------------------------- //
   /// Loads a drk/xrk file and creates an `XrdkFile` object.
   pub fn load(path: &Path) -> Result<Self> {
+    let extension =
+      path.extension()
+          .unwrap_or_default()
+          .to_str()
+          .ok_or(anyhow!("file extension is not valid unicode"))?;
+
     ensure!(path.exists()
             && path.is_file()
-            && path.extension().unwrap_or_default() == "xrk",
+            && ["drk", "xrk"].contains(&extension),
             "path does not exist or not a valid file");
 
     let path = path.to_owned();
