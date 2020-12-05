@@ -2,7 +2,7 @@
 //
 // Author: Florian Eich <florian@bmc-labs.com>
 
-use fubar::{ensure, fubar, Result};
+use anyhow::{anyhow, ensure, Result};
 use std::{ffi::{CStr, CString},
           os::raw::c_char,
           path::Path};
@@ -34,7 +34,7 @@ pub fn strref_to_cstring(strref: &str) -> Result<CString> {
 pub fn path_to_cstring(path: &Path) -> Result<CString> {
   strref_to_cstring(path.canonicalize()?
                         .to_str()
-                        .ok_or(fubar!("path '{}' invalid", path.display()))?)
+                        .ok_or(anyhow!("path '{}' invalid", path.display()))?)
 }
 
 
