@@ -199,7 +199,6 @@ extern "C" {
   /// - `0` if the channel contains no datapoints (theoretically impossible)
   /// - on error, a negative value
   pub fn get_channel_samples_count(idxf: c_int, idxc: c_int) -> c_int;
-
   /// Get datapoints in channel
   ///
   /// # Arguments
@@ -502,6 +501,6 @@ extern "C" {
 
   /// Returns the compile time of this library as a C string
   pub fn get_library_time() -> *const c_char;
-  // ----------------------------------------------------------------------- //
+// ----------------------------------------------------------------------- //
 
 }

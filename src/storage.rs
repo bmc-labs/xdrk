@@ -2,6 +2,8 @@
 //
 // Author: Florian Eich <florian@bmc-labs.com>
 
+use super::xdrkfile::XdrkFile;
+use fubar::Result;
 use getset::{CopyGetters, Getters, MutGetters};
 
 /// Stores the start time within the recording and the duration of a lap.
@@ -29,19 +31,19 @@ pub struct ChannelData {
 
 impl ChannelData {
   /// Helper function which allocates memory buffers in the required format
-  pub fn allocate(capacity: usize) -> (Vec<f64>, Vec<f64>) {
-    (Vec::with_capacity(capacity), Vec::with_capacity(capacity))
+  pub fn allocate(count: usize) -> (Vec<f64>, Vec<f64>) {
+    (Vec::with_capacity(count), Vec::with_capacity(count))
   }
 
   /// Creates a new `ChannelData` object from buffers and a given buffer size
   pub fn from_tsc(mut timestamps: Vec<f64>,
                   mut samples: Vec<f64>,
-                  size: usize)
+                  count: usize)
                   -> Self
   {
     unsafe {
-      timestamps.set_len(size);
-      samples.set_len(size);
+      timestamps.set_len(count);
+      samples.set_len(count);
     }
 
     Self { timestamps,
@@ -50,5 +52,42 @@ impl ChannelData {
 
   pub fn is_empty(&self) -> bool {
     self.timestamps.is_empty() && self.samples.is_empty()
+  }
+}
+
+
+/// Holds metadata of a channel and does lazy loading of the channel data
+#[derive(Debug, PartialEq, CopyGetters, Getters)]
+pub struct Channel<'a> {
+  #[getset(get = "pub")]
+  name: String,
+  #[getset(get_copy = "pub")]
+  idx:  usize,
+  #[getset(get = "pub")]
+  unit: String,
+  #[getset(get = "pub")]
+  file: &'a XdrkFile,
+  data: Option<ChannelData>,
+}
+
+impl<'a> Channel<'a> {
+  pub fn new(name: String,
+             idx: usize,
+             unit: String,
+             file: &'a XdrkFile)
+             -> Self
+  {
+    Self { name,
+           idx,
+           unit,
+           file,
+           data: None }
+  }
+
+  pub fn data(&mut self) -> Result<&ChannelData> {
+    if self.data.is_none() {
+      self.data = Some(self.file.channel_samples(self.idx)?);
+    }
+    Ok(self.data.as_ref().unwrap())
   }
 }

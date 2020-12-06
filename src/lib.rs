@@ -26,5 +26,5 @@ mod storage;
 mod xdrkbindings;
 mod xdrkfile;
 
-pub use storage::{ChannelData, LapInfo};
+pub use storage::{Channel, ChannelData, LapInfo};
 pub use xdrkfile::XdrkFile;
