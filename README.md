@@ -48,24 +48,24 @@ need again, do the following:
 1. From Start menu run "Visual Studio Command Prompt".
 1. Navigate to `where/you/put/xdrkrs/aim`
 1. Execute command:
-  `dumpbin /exports libxdrk-x86_64.dll > libxdrk-x86_64.def`
-  This command prints some information about given DLL library in textual form
-  to its standard output. We redirect it to a text file with DEF extension. But
-  to make it real DEF file, we need to edit it.
+    `dumpbin /exports libxdrk-x86_64.dll > libxdrk-x86_64.def`
+    This command prints some information about given DLL library in textual
+    form to its standard output. We redirect it to a text file with DEF
+    extension. But to make it real DEF file, we need to edit it.
 1. Open `libxdrk-x86_64.def` in some text editor and edit it to contain only
-   the names of exported functions in form of:
-  ```
-  EXPORTS
-  function_1_name
-  function_2_name
-  function_3_name
-  ```
-  At this point you may also want to compare the DEF file with the one that is
-  provided in the `aim` directory of this repo.
+    the names of exported functions in form of:
+    ```
+    EXPORTS
+    function_1_name
+    function_2_name
+    function_3_name
+    ```
+    At this point you may also want to compare the DEF file with the one that
+    is provided in the `aim` directory of this repo.
 1. Execute another command:
-  ```
-  lib /def:libxdrk-x86_64.def /out:libxdrk-x86_64.lib /machine:x64
-  ```
+    ```
+    lib /def:libxdrk-x86_64.def /out:libxdrk-x86_64.lib /machine:x64
+    ```
 
 And there you have it! The so much required LIB file generated from DLL
 library.
