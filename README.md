@@ -54,12 +54,12 @@ need again, do the following:
   to make it real DEF file, we need to edit it.
 1. Open `libxdrk-x86_64.def` in some text editor and edit it to contain only
    the names of exported functions in form of:
-   ```
+  ```
   EXPORTS
   function_1_name
   function_2_name
   function_3_name
-   ```
+  ```
   At this point you may also want to compare the DEF file with the one that is
   provided in the `aim` directory of this repo.
 1. Execute another command:
