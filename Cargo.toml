@@ -1,16 +1,17 @@
 # Copyright 2020 bmc::labs Gmbh. All rights reserved.
 #
-# Authors: Florian Eich <florian@bmc-labs.com>
+# Authors:
+#   Florian Eich <florian@bmc-labs.com>
+#   Jonas Reitemeyer <jonas@bmc-labs.com>
 
 [package]
-name = "xdrkrs"
+name = "xdrk"
 description = "Library to open XRK and DRK files, produced by AiM devices"
 
 version = "1.1.0"
 authors = [
   "Florian Eich <florian@bmc-labs.com>",
-  "Jonas Reitemeyer <jonas@bmc-labs.com",
-  "Jannik Schütz <jannik@bmc-labs.com"
+  "Jonas Reitemeyer <jonas@bmc-labs.com"
 ]
 
 edition = "2018"

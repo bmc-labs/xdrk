@@ -1,6 +1,8 @@
 // Copyright 2020 bmc::labs Gmbh. All rights reserved.
 //
-// Author: Florian Eich <florian@bmc-labs.com>
+// Authors:
+//   Florian Eich <florian@bmc-labs.com>
+//   Jonas Reitemeyer <jonas@bmc-labs.com>
 
 use std::os::raw::{c_char, c_int};
 
