@@ -1,4 +1,4 @@
-# `xdrkrs` - a library to access files produced by AiM devices
+# `xdrk` - a library to access files produced by AiM devices
 
 Or rather, a Rust wrapper for the shared library provided by AiM which is
 written in C/C++ and provides an unsafe interface. This wrapper does its best
@@ -46,7 +46,7 @@ Now that you've installed another 2GB or so of stuff you probably won't ever
 need again, do the following:
 
 1. From Start menu run "Visual Studio Command Prompt".
-1. Navigate to `where/you/put/xdrkrs/aim`
+1. Navigate to `where/you/put/xdrk/aim`
 1. Execute command:
     `dumpbin /exports libxdrk-x86_64.dll > libxdrk-x86_64.def`
     This command prints some information about given DLL library in textual
