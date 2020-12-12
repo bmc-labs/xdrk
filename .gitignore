@@ -2,6 +2,8 @@
 /target/
 Cargo.lock
 
+### Aim ###
+*.tmp
 
 ### Vim ###
 # Swap
