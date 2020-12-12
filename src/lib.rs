@@ -23,10 +23,14 @@
 //! library, higher level functions for retrieving data are provided, as well
 //! as machinery to synchronize the raw data into matching time series.
 
+mod channel;
+mod lap;
+mod rundata;
 mod service;
-mod storage;
 mod xdrkbindings;
 mod xdrkfile;
 
-pub use storage::{Channel, ChannelData, LapInfo};
+pub use channel::{Channel, ChannelData};
+pub use lap::{Lap, LapInfo};
+pub use rundata::RunData;
 pub use xdrkfile::XdrkFile;

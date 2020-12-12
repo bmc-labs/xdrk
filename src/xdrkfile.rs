@@ -4,10 +4,10 @@
 //   Florian Eich <florian@bmc-labs.com>
 //   Jonas Reitemeyer <jonas@bmc-labs.com>
 
-use super::{service as srv,
-            storage::{Channel, ChannelData, LapInfo},
+use super::{channel::{Channel, ChannelData},
+            lap::LapInfo,
+            service as srv,
             xdrkbindings as aim};
-
 use anyhow::{anyhow, bail, ensure, Result};
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use getset::{CopyGetters, Getters};
@@ -238,6 +238,19 @@ impl XdrkFile {
     ensure!(read == count as i32, "error reading channel samples");
 
     Ok(ChannelData::from_tsc(timestamps, samples, count))
+  }
+
+  /// For a lap with index 'lap_idx' returns the data belonging to this lap as
+  /// vector of Channel objects
+  pub fn lap_data(&self, lap_idx: usize) -> Result<Vec<Channel>> {
+    let channel_count = self.channels_count()?;
+    let mut channels: Vec<Channel> = Vec::new();
+    for i in 0..channel_count {
+      let channel_data = self.lap_channel_samples(lap_idx, i)?;
+      let channel_name = self.channel_name(i)?;
+      channels.push(Channel::new(channel_name, channel_data));
+    }
+    Ok(channels)
   }
 
   /// For lap with index `lap_idx` and channel with index `channel_idx`,
@@ -595,37 +608,6 @@ impl XdrkFile {
   }
 }
 
-pub struct ChannelIterator<'a> {
-  file:          &'a XdrkFile,
-  index:         usize,
-  channel_count: usize,
-}
-
-impl<'a> ChannelIterator<'a> {
-  pub fn new(file: &'a XdrkFile) -> Result<Self> {
-    Ok(ChannelIterator { file:          file,
-                         index:         0,
-                         channel_count: file.channels_count()?, })
-  }
-}
-
-impl<'a> Iterator for ChannelIterator<'a> {
-  type Item = Channel<'a>;
-
-  fn next(&mut self) -> Option<Self::Item> {
-    if self.index == self.channel_count {
-      return None;
-    }
-
-    // Safe unwraps here as index is in range
-    let name = self.file.channel_name(self.index).unwrap();
-    let unit = self.file.channel_unit(self.index).unwrap();
-
-    self.index += 1;
-
-    Some(Channel::new(name, self.index - 1, unit, self.file))
-  }
-}
 
 // LIBRARY CODE END -------------------------------------------------------- //
 
