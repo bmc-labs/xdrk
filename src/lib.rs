@@ -1,8 +1,10 @@
 // Copyright 2020 bmc::labs Gmbh. All rights reserved.
 //
-// Author: Florian Eich <florian@bmc-labs.com>
+// Authors:
+//   Florian Eich <florian@bmc-labs.com>
+//   Jonas Reitemeyer <jonas@bmc-labs.com>
 
-//! `xrdkrs` is a Rust wrapper around the shared library to access data in XRK
+//! `xrdk` is a Rust wrapper around the shared library to access data in XRK
 //! or DRK format. Such data is recorded by devices from _AiM Tech Srl_, a
 //! company focused on data logging products for the motor racing segment.
 //!

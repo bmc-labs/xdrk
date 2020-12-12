@@ -1,9 +1,10 @@
 // Copyright 2020 bmc::labs Gmbh. All rights reserved.
 //
-// Author: Florian Eich <florian@bmc-labs.com>
-
+// Authors:
+//   Florian Eich <florian@bmc-labs.com>
+//   Jonas Reitemeyer <jonas@bmc-labs.com>
 use super::xdrkfile::XdrkFile;
-use fubar::Result;
+use anyhow::Result;
 use getset::{CopyGetters, Getters, MutGetters};
 
 /// Stores the start time within the recording and the duration of a lap.

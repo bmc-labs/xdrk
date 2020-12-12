@@ -1,13 +1,18 @@
 # Copyright 2020 bmc::labs Gmbh. All rights reserved.
 #
-# Authors: Florian Eich <florian@bmc-labs.com>
+# Authors:
+#   Florian Eich <florian@bmc-labs.com>
+#   Jonas Reitemeyer <jonas@bmc-labs.com>
 
 [package]
-name = "xdrkrs"
+name = "xdrk"
 description = "Library to open XRK and DRK files, produced by AiM devices"
 
-version = "1.0.0"
-authors = ["Florian Eich <florian@bmc-labs.com>"]
+version = "1.1.0"
+authors = [
+  "Florian Eich <florian@bmc-labs.com>",
+  "Jonas Reitemeyer <jonas@bmc-labs.com"
+]
 
 edition = "2018"
 build = "build.rs"
@@ -18,10 +23,7 @@ pretty_assertions = "0.6"
 
 
 [dependencies]
-# internal
-fubar = { git = "https://gitlab.bmc-labs.com/libraries/fubar.git", branch = "trunk" }
-
-# external
+anyhow = "1"
 chrono = "0.4"
 getset = "0.1"
 serde = { version = "1.0", features = ["derive"] }
