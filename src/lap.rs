@@ -1,11 +1,18 @@
+// Copyright 2020 bmc::labs Gmbh. All rights reserved.
+//
+// Authors:
+//   Jonas Reitemeyer <jonas@bmc-labs.com>
+//   Florian Eich <florian@bmc-labs.com>
+
 use super::channel::Channel;
+
 use getset::{CopyGetters, Getters};
 
 /// Hold all channels of a single lap
 #[derive(Debug, PartialEq, Getters)]
 pub struct Lap {
-  channels: Vec<Channel>,
   info:     LapInfo,
+  channels: Vec<Channel>,
 }
 
 impl Lap {
