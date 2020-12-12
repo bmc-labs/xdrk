@@ -1,0 +1,29 @@
+# Copyright 2020 bmc::labs Gmbh. All rights reserved.
+#
+# Authors: Florian Eich <florian@bmc-labs.com>
+
+stages:
+  - test
+  - doc
+
+test:cargo:
+  stage: test
+  tags:
+    - rust
+  script:
+    - rustc --version && cargo --version  # Print version info for debugging
+    - cargo test --workspace --verbose
+
+pages:
+  stage: doc
+  tags:
+    - rust
+  script:
+    - cargo doc --no-deps
+    - mv target/doc public
+    - echo '<meta http-equiv="refresh" content="0; url=xdrk">' > public/index.html
+  artifacts:
+    paths:
+      - public
+  only:
+    - trunk
