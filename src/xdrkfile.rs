@@ -619,7 +619,7 @@ mod tests {
   use std::fs;
 
   static XRK_PATH: &str =
-    "./testdata/WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
+    "./testdata/xdrkrs_test/WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
 
   #[test]
   fn xdrkrs_test() {
@@ -633,7 +633,7 @@ mod tests {
     }
     // ... and then scan for temporary files afterwards
     let allowed_extensions = vec!["drk", "rrk", "xrk", "xrz"];
-    for file in fs::read_dir(Path::new("./testdata")).unwrap() {
+    for file in fs::read_dir(Path::new("./testdata/xdrkrs_test")).unwrap() {
       let file = file.unwrap();
       assert_eq!(true,
                  allowed_extensions.contains(&file.path()

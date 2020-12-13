@@ -30,15 +30,14 @@ impl RunData {
 
 #[cfg(test)]
 mod tests {
-  use super::*;
-  use pretty_assertions::assert_eq;
-  use std::fs;
+  use super::RunData;
+  use std::path::Path;
 
   static XRK_PATH: &str =
-    "./testdata/WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
+    "./testdata/rundata_test/WT-20_E05-ARA_Q2_AU-RS3-R5-S-S_016_a_1139.xrk";
 
   #[test]
   fn rundata_test() {
-    let run_data = RunData::new(Path::new(XRK_PATH)).unwrap();
+    let _run_data = RunData::new(Path::new(XRK_PATH)).unwrap();
   }
 }
