@@ -12,7 +12,7 @@ test:cargo:
     - rust
   script:
     - rustc --version && cargo --version  # Print version info for debugging
-    - cargo test --workspace --verbose
+    - cargo test --workspace --verbose -- --test-threads=1
 
 pages:
   stage: doc
