@@ -1,4 +1,11 @@
+// Copyright 2020 bmc::labs Gmbh. All rights reserved.
+//
+// Authors:
+//   Jonas Reitemeyer <jonas@bmc-labs.com>
+//   Florian Eich <florian@bmc-labs.com>
+
 use getset::{Getters, MutGetters};
+
 
 /// Holds data of a channel and additional metadata
 #[derive(Debug, PartialEq, Getters)]

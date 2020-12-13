@@ -43,12 +43,11 @@ pub fn path_to_cstring(path: &Path) -> Result<CString> {
 #[cfg(test)]
 mod tests {
   use super::*;
-
   use pretty_assertions::assert_eq;
 
 
   #[test]
-  fn strptr_to_tests() {
+  fn strptr_to_test() {
     let as_strref = "warblgarbl";
     let as_cstring = CString::new(as_strref).unwrap();
 
@@ -61,7 +60,7 @@ mod tests {
 
   #[test]
   fn path_to_cstring_test() {
-    let path_str = "./testdata/strptr_to_test/\
+    let path_str = "./testdata/path_to_cstring_test/\
                     WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
     let path_abs = Path::new(path_str).canonicalize().unwrap();
 

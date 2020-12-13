@@ -4,10 +4,11 @@
 //   Florian Eich <florian@bmc-labs.com>
 //   Jonas Reitemeyer <jonas@bmc-labs.com>
 
-use super::{channel::{Channel, ChannelData},
-            lap::LapInfo,
-            service as srv,
-            xdrkbindings as aim};
+use super::{service as srv,
+            xdrkbindings as aim,
+            Channel,
+            ChannelData,
+            LapInfo};
 use anyhow::{anyhow, bail, ensure, Result};
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use getset::{CopyGetters, Getters};
@@ -618,11 +619,12 @@ mod tests {
   use pretty_assertions::assert_eq;
   use std::fs;
 
+
   static XRK_PATH: &str =
-    "./testdata/xdrkrs_test/WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
+    "./testdata/xdrkfile_test/WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
 
   #[test]
-  fn xdrkrs_test() {
+  fn xdrkfile_test() {
     // opening XRK and DRK files produces temporary files which are cleaned
     // up when the file is closed, which we do via `Drop` so it happens when
     // the object goes out of scope. to test this is working, we wrap the
@@ -633,7 +635,7 @@ mod tests {
     }
     // ... and then scan for temporary files afterwards
     let allowed_extensions = vec!["drk", "rrk", "xrk", "xrz"];
-    for file in fs::read_dir(Path::new("./testdata/xdrkrs_test")).unwrap() {
+    for file in fs::read_dir(Path::new("./testdata/xdrkfile_test")).unwrap() {
       let file = file.unwrap();
       assert_eq!(true,
                  allowed_extensions.contains(&file.path()
