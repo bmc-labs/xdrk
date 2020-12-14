@@ -4,20 +4,34 @@
 //   Jonas Reitemeyer <jonas@bmc-labs.com>
 //   Florian Eich <florian@bmc-labs.com>
 
-use super::Channel;
+use super::{Channel, RawChannel};
 use getset::{CopyGetters, Getters};
 
 
 /// Hold all channels of a lap.
 #[derive(Debug, PartialEq, Getters)]
 pub struct Lap {
-  info:     LapInfo,
+  number:   usize,
+  start:    f64,
+  time:     f64,
   channels: Vec<Channel>,
 }
 
 impl Lap {
   pub fn new(info: LapInfo, channels: Vec<Channel>) -> Self {
-    Self { info, channels }
+    Self { number: info.number(),
+           start: info.start(),
+           time: info.time(),
+           channels }
+  }
+
+  pub fn from_raw(info: LapInfo, raw_channels: Vec<RawChannel>) -> Self {
+    let channels =
+      raw_channels.into_iter()
+                  .map(|c| Channel::from_raw_channel(c, info.time()))
+                  .collect();
+
+    Self::new(info, channels)
   }
 }
 

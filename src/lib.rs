@@ -30,7 +30,7 @@ mod service;
 mod xdrk_bindings;
 mod xdrk_file;
 
-pub use channel::{Channel, ChannelData, ChannelInfo};
+pub use channel::{Channel, ChannelData, ChannelInfo, RawChannel};
 pub use lap::{Lap, LapInfo};
 pub use run_data::RunData;
 pub use xdrk_file::XdrkFile;

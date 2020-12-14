@@ -15,11 +15,11 @@ use std::path::Path;
 #[derive(Debug, PartialEq, Getters)]
 #[getset(get = "pub")]
 pub struct RunData {
-  championship:  String,
-  track:         String,
-  venue_type:    String,
-  vehicle:       String,
-  racer:         String,
+  championship:  String, // "WT-20_E05"
+  track:         String, // "ARA"
+  venue_type:    String, // "Q3"
+  vehicle:       String, // "HY-i30N-C4-X-S"
+  racer:         String, // "030"
   datetime:      NaiveDateTime,
   channel_names: Vec<String>,
   laps:          Vec<Lap>,

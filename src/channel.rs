@@ -5,20 +5,81 @@
 //   Florian Eich <florian@bmc-labs.com>
 
 use getset::{CopyGetters, Getters, MutGetters};
+use std::{iter, vec};
 
 
-/// Holds data of a channel and additional metadata.
+/// Holds synchronized channel data.
 #[derive(Clone, Debug, PartialEq, Getters)]
-#[getset(get = "pub")]
 pub struct Channel {
-  info: ChannelInfo,
-  data: ChannelData,
+  #[getset(get = "pub")]
+  name:      String,
+  #[getset(get = "pub")]
+  unit:      String,
+  #[getset(get_copy = "pub")]
+  frequency: usize,
+  #[getset(get = "pub")]
+  data:      Vec<f32>,
 }
 
 impl Channel {
+  pub fn from_raw_channel(raw: RawChannel, time: f64) -> Self {
+    let name = raw.name().to_owned();
+    let unit = raw.unit().to_owned();
+    let frequency = raw.frequency();
+    let mut data = Vec::with_capacity((time * frequency as f64) as usize);
+
+    let advance = 1.0 / frequency as f64;
+    let threshold = 0.5 * advance;
+
+    let (mut timestamp, mut sample) = (0.0f64, 0.0f64);
+    let mut raw_iter = raw.data().to_owned().into_iter();
+    let mut raw_data = raw_iter.next();
+
+    while timestamp < time {
+      if raw_data.is_some()
+         && (raw_data.unwrap().0 - timestamp).abs() < threshold
+      {
+        sample = raw_data.unwrap().1;
+        raw_data = raw_iter.next();
+      }
+      timestamp = timestamp + advance;
+      data.push(sample as f32);
+    }
+
+    Self { name,
+           unit,
+           frequency,
+           data }
+  }
+
+  pub fn len(&self) -> usize {
+    self.data.len()
+  }
+
+  pub fn is_empty(&self) -> bool {
+    self.data.is_empty()
+  }
+}
+
+
+/// Holds raw, unsynchronized data of a channel and additional metadata.
+#[derive(Clone, Debug, PartialEq, Getters)]
+#[getset(get = "pub")]
+pub struct RawChannel {
+  name:  String,
+  unit:  String, // TODO eventually should be kissunits (crate) (?)
+  #[getset(get)] // eliminate getter for count: use `len()` instead
+  count: usize,
+  data:  ChannelData,
+}
+
+impl RawChannel {
   pub fn new(info: ChannelInfo, data: ChannelData) -> Self {
-    assert_eq!(info.samples_count(), data.len());
-    Self { info, data }
+    assert_eq!(info.count, data.len());
+    Self { name: info.name,
+           unit: info.unit,
+           count: info.count,
+           data }
   }
 
   /// Construct a new `Channel` from raw `ChannelInfo` input parameters:
@@ -33,16 +94,10 @@ impl Channel {
                    -> Self
   {
     assert_eq!(count, data.len());
-    Self { info: ChannelInfo::new(name, unit, count),
+    Self { name,
+           unit,
+           count,
            data }
-  }
-
-  pub fn name(&self) -> &str {
-    self.info.name()
-  }
-
-  pub fn unit(&self) -> &str {
-    self.info.unit()
   }
 
   /// Calculates and returns the recording frequency of the data in Hz.
@@ -59,8 +114,8 @@ impl Channel {
   }
 
   pub fn len(&self) -> usize {
-    assert_eq!(self.info.samples_count(), self.data.timestamps().len());
-    self.info.samples_count()
+    assert_eq!(self.count, self.data.timestamps().len());
+    self.count
   }
 
   pub fn is_empty(&self) -> bool {
@@ -73,18 +128,16 @@ impl Channel {
 #[derive(Clone, Debug, PartialEq, CopyGetters, Getters)]
 pub struct ChannelInfo {
   #[getset(get = "pub")]
-  name:          String,
+  name:  String,
   #[getset(get = "pub")]
-  unit:          String, // TODO eventually should be kissunits (crate) (?)
+  unit:  String, // TODO eventually should be kissunits (crate) (?)
   #[getset(get_copy = "pub")]
-  samples_count: usize,
+  count: usize,
 }
 
 impl ChannelInfo {
-  pub fn new(name: String, unit: String, samples_count: usize) -> Self {
-    Self { name,
-           unit,
-           samples_count }
+  pub fn new(name: String, unit: String, count: usize) -> Self {
+    Self { name, unit, count }
   }
 }
 
@@ -133,6 +186,15 @@ impl ChannelData {
   }
 }
 
+impl IntoIterator for ChannelData {
+  type IntoIter = iter::Zip<vec::IntoIter<f64>, vec::IntoIter<f64>>;
+  type Item = (f64, f64);
+
+  fn into_iter(self) -> Self::IntoIter {
+    self.timestamps.into_iter().zip(self.samples.into_iter())
+  }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -146,7 +208,7 @@ mod tests {
     "./testdata/WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
 
   #[test]
-  fn channel_test() {
+  fn raw_channel_test() {
     let (correct_size, panic_size) = (42, 1337);
     // unhappy path tests for constructors
     let channel_info =
@@ -154,26 +216,26 @@ mod tests {
     let channel_data = ChannelData::from_tsc(Vec::with_capacity(correct_size),
                                              Vec::with_capacity(correct_size),
                                              correct_size);
-    assert_panics!(Channel::new(channel_info, channel_data.clone()));
-    assert_panics!(Channel::from_nucd("warbl".to_string(),
-                                      "garbl".to_string(),
-                                      panic_size,
-                                      channel_data.clone()));
+    assert_panics!(RawChannel::new(channel_info, channel_data.clone()));
+    assert_panics!(RawChannel::from_nucd("warbl".to_string(),
+                                         "garbl".to_string(),
+                                         panic_size,
+                                         channel_data.clone()));
 
     // happy path tests without context
     let channel_info =
       ChannelInfo::new("warbl".to_string(), "garbl".to_string(), correct_size);
-    let channel = Channel::new(channel_info, channel_data.clone());
+    let channel = RawChannel::new(channel_info, channel_data.clone());
     assert_eq!("warbl", channel.name());
     assert_eq!("garbl", channel.unit());
     assert_eq!(0, channel.frequency());
     assert_eq!(false, channel.is_empty());
     assert_eq!(correct_size, channel.len());
 
-    let channel = Channel::from_nucd("warbl".to_string(),
-                                     "garbl".to_string(),
-                                     correct_size,
-                                     channel_data.clone());
+    let channel = RawChannel::from_nucd("warbl".to_string(),
+                                        "garbl".to_string(),
+                                        correct_size,
+                                        channel_data.clone());
     assert_eq!("warbl", channel.name());
     assert_eq!("garbl", channel.unit());
     assert_eq!(0, channel.frequency());
@@ -195,9 +257,9 @@ mod tests {
   fn channel_info_test() {
     let channel_info =
       ChannelInfo::new("warbl".to_string(), "garbl".to_string(), 42);
-    assert_eq!("warbl", channel_info.name());
-    assert_eq!("garbl", channel_info.unit());
-    assert_eq!(42, channel_info.samples_count());
+    assert_eq!("warbl", channel_info.name);
+    assert_eq!("garbl", channel_info.unit);
+    assert_eq!(42, channel_info.count);
   }
 
   #[test]

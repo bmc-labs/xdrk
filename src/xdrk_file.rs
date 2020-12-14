@@ -6,11 +6,11 @@
 
 use super::{service as srv,
             xdrk_bindings as aim,
-            Channel,
             ChannelData,
             ChannelInfo,
             Lap,
-            LapInfo};
+            LapInfo,
+            RawChannel};
 use anyhow::{anyhow, bail, ensure, Result};
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use getset::{CopyGetters, Getters};
@@ -85,24 +85,24 @@ impl XdrkFile {
     Ok(channel_infos)
   }
 
-  /// Request a `Channel` object by name. Fails if no channel with that name
+  /// Request a `RawChannel` object by name. Fails if no channel with that name
   /// exists or the library call fails for any reason.
-  pub fn channel(&self, name: &str) -> Result<Channel> {
+  pub fn channel(&self, name: &str) -> Result<RawChannel> {
     let (idx, info) = self.channel_infos()?
                           .into_iter()
                           .enumerate()
                           .find(|(_, info)| name == info.name())
                           .ok_or(anyhow!("channel not found"))?;
 
-    Ok(Channel::new(info, self.channel_samples(idx)?))
+    Ok(RawChannel::new(info, self.channel_samples(idx)?))
   }
 
-  /// Request a list of `Channel` objects. A lap index may be passed as
+  /// Request a list of `RawChannel` objects. A lap index may be passed as
   /// `Some(index)`, otherwise `None` must be passed. `channels` will return
   /// channels with data from on lap, or all laps of this `XdrkFile`.  Fails if
   /// the `lap_idx` is out of range (i.e. the `XdrkFile` does not contain a lap
   /// with that index) or the library call fails for any reason.
-  pub fn channels(&self, lap_idx: Option<usize>) -> Result<Vec<Channel>> {
+  pub fn channels(&self, lap_idx: Option<usize>) -> Result<Vec<RawChannel>> {
     let mut channels = Vec::with_capacity(self.channels_count()?);
     for channel_idx in 0..channels.capacity() {
       let (info, data) = if let Some(lap_idx) = lap_idx {
@@ -111,20 +111,20 @@ impl XdrkFile {
       } else {
         (self.channel_info(channel_idx)?, self.channel_samples(channel_idx)?)
       };
-      channels.push(Channel::new(info, data));
+      channels.push(RawChannel::new(info, data));
     }
     Ok(channels)
   }
 
   /// Convenience wrapper for getting all channels contained in this
   /// `XdrkFile`. Calls `self.channels(None)`.
-  pub fn all_channels(&self) -> Result<Vec<Channel>> {
+  pub fn all_channels(&self) -> Result<Vec<RawChannel>> {
     self.channels(None)
   }
 
   /// Convenience wrapper for getting all channels contained in this `XdrkFile`
   /// for a given lap. Calls `self.channels(Some(lap_idx))`.
-  pub fn channels_in_lap(&self, lap_idx: usize) -> Result<Vec<Channel>> {
+  pub fn channels_in_lap(&self, lap_idx: usize) -> Result<Vec<RawChannel>> {
     self.channels(Some(lap_idx))
   }
 
@@ -146,7 +146,7 @@ impl XdrkFile {
   /// `Lap` objects contain a `LapInfo` object and a `Vec<Channel>` containing
   /// all data recorded in the lap.
   pub fn lap(&self, idx: usize) -> Result<Lap> {
-    Ok(Lap::new(self.lap_info(idx)?, self.channels_in_lap(idx)?))
+    Ok(Lap::from_raw(self.lap_info(idx)?, self.channels_in_lap(idx)?))
   }
 
   /// Request all channels for all laps contained in this `XdrkFile`. Fails if
