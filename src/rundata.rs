@@ -6,6 +6,7 @@
 
 use super::{Lap, XdrkFile};
 use anyhow::Result;
+use chrono::NaiveDateTime;
 use getset::Getters;
 use std::path::Path;
 
@@ -13,28 +14,36 @@ use std::path::Path;
 /// Root Object for holding all the Data, which is grouped per lap
 #[derive(Debug, PartialEq, Getters)]
 pub struct RunData {
-  channels: Vec<String>,
-  laps:     Vec<Lap>,
+  championship:  String,
+  track:         String,
+  venue_type:    String,
+  vehicle:       String,
+  racer:         String,
+  datetime:      NaiveDateTime,
+  channel_names: Vec<String>,
+  laps:          Vec<Lap>,
 }
 
 impl RunData {
-  pub fn new(path: &Path) -> Result<Self> {
-    let xdrk = XdrkFile::load(path)?;
-    let laps_count = xdrk.laps_count()?;
-    let channels_count = xdrk.channels_count()?;
+  pub fn new(path: &str) -> Result<Self> {
+    let xdrk = XdrkFile::load(Path::new(path))?;
 
-    let mut laps: Vec<Lap> = Vec::new();
-    for i in 0..laps_count {
-      let lap_info = xdrk.lap_info(i)?;
-      laps.push(Lap::new(lap_info, xdrk.lap_data(i)?));
-    }
+    Ok(Self { championship:  xdrk.championship_name()?,
+              track:         xdrk.track_name()?,
+              venue_type:    xdrk.venue_type_name()?,
+              vehicle:       xdrk.vehicle_name()?,
+              racer:         xdrk.racer_name()?,
+              datetime:      xdrk.date_time()?,
+              channel_names: xdrk.channel_names()?,
+              laps:          xdrk.laps()?, })
+  }
 
-    let mut channels: Vec<String> = Vec::new();
-    for i in 0..channels_count {
-      channels.push(xdrk.channel_name(i)?);
-    }
+  pub fn number_of_channels(&self) -> usize {
+    self.channel_names.len()
+  }
 
-    Ok(Self { laps, channels })
+  pub fn number_of_laps(&self) -> usize {
+    self.laps.len()
   }
 }
 
@@ -42,7 +51,6 @@ impl RunData {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use std::path::Path;
 
 
   static XRK_PATH: &str =
@@ -50,6 +58,6 @@ mod tests {
 
   #[test]
   fn rundata_test() {
-    let _run_data = RunData::new(Path::new(XRK_PATH)).unwrap();
+    let _run_data = RunData::new(XRK_PATH).unwrap();
   }
 }

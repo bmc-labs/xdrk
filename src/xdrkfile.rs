@@ -8,6 +8,8 @@ use super::{service as srv,
             xdrkbindings as aim,
             Channel,
             ChannelData,
+            ChannelInfo,
+            Lap,
             LapInfo};
 use anyhow::{anyhow, bail, ensure, Result};
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
@@ -35,6 +37,84 @@ impl Drop for XdrkFile {
 }
 
 impl XdrkFile {
+  // CONVENIENCE FUNCTIONS ------------------------------------------------- //
+  pub fn channel_names(&self) -> Result<Vec<String>> {
+    let mut names = Vec::with_capacity(self.channels_count()?);
+    for idx in 0..names.capacity() {
+      names.push(self.channel_name(idx)?);
+    }
+    Ok(names)
+  }
+
+  pub fn channel_units(&self) -> Result<Vec<String>> {
+    let mut units = Vec::with_capacity(self.channels_count()?);
+    for idx in 0..units.capacity() {
+      units.push(self.channel_unit(idx)?);
+    }
+    Ok(units)
+  }
+
+  pub fn channel_infos(&self) -> Result<Vec<ChannelInfo>> {
+    let mut channel_infos = Vec::with_capacity(self.channels_count()?);
+    for idx in 0..channel_infos.capacity() {
+      channel_infos.push(self.channel_info(idx)?);
+    }
+    Ok(channel_infos)
+  }
+
+  pub fn channel(&self, name: &str) -> Result<Channel> {
+    let (idx, info) = self.channel_infos()?
+                          .into_iter()
+                          .enumerate()
+                          .find(|(_, info)| name == info.name())
+                          .ok_or(anyhow!("channel not found"))?;
+
+    Ok(Channel::new(info, self.channel_samples(idx)?))
+  }
+
+  pub fn channels(&self, lap_idx: Option<usize>) -> Result<Vec<Channel>> {
+    let mut channels = Vec::with_capacity(self.channels_count()?);
+    for idx in 0..channels.capacity() {
+      let data = if let Some(lap_idx) = lap_idx {
+        self.lap_channel_samples(lap_idx, idx)?
+      } else {
+        self.channel_samples(idx)?
+      };
+      channels.push(Channel::new(self.channel_info(idx)?, data));
+    }
+    Ok(channels)
+  }
+
+  pub fn all_channels(&self) -> Result<Vec<Channel>> {
+    self.channels(None)
+  }
+
+  pub fn channels_in_lap(&self, lap_idx: usize) -> Result<Vec<Channel>> {
+    self.channels(Some(lap_idx))
+  }
+
+  pub fn lap_infos(&self) -> Result<Vec<LapInfo>> {
+    let mut lap_infos = Vec::with_capacity(self.laps_count()?);
+    for idx in 0..lap_infos.capacity() {
+      lap_infos.push(self.lap_info(idx)?);
+    }
+    Ok(lap_infos)
+  }
+
+  /// For a lap with index 'lap_idx' returns the data belonging to this lap as
+  /// vector of Channel objects
+  pub fn lap(&self, idx: usize) -> Result<Lap> {
+    Ok(Lap::new(self.lap_info(idx)?, self.channels_in_lap(idx)?))
+  }
+
+  pub fn laps(&self) -> Result<Vec<Lap>> {
+    let mut laps = Vec::with_capacity(self.laps_count()?);
+    for idx in 0..laps.capacity() {
+      laps.push(self.lap(idx)?);
+    }
+    Ok(laps)
+  }
+
   // FILE OPENING / CLOSING FUNCTIONS -------------------------------------- //
   /// Loads a drk/xrk file and creates an `XrdkFile` object.
   pub fn load(path: &Path) -> Result<Self> {
@@ -149,22 +229,19 @@ impl XdrkFile {
   /// `lap_idx` is out of range (i.e. the `XdrkFile` does not contain a lap
   /// with that index) or the library calls fails for any reason.
   ///
-  /// `LapInfo` objects contain the start of the lap within the run recorded in
-  /// this file (via the `start()` getter) and the lap duration (via the
-  /// `duration()` getter).
+  /// `LapInfo` objects contain the lap number, the start of the lap within the
+  /// run recorded in this file (via the `start()` getter) and the lap duration
+  /// (via the `duration()` getter).
   pub fn lap_info(&self, lap_idx: usize) -> Result<LapInfo> {
     ensure!(lap_idx < self.laps_count()?, "lap_idx out of range");
 
-    let (mut start, mut duration) = (0.0f64, 0.0f64);
+    let (mut start, mut time) = (0.0f64, 0.0f64);
     let err_code = unsafe {
-      aim::get_lap_info(self.idx as i32,
-                        lap_idx as i32,
-                        &mut start,
-                        &mut duration)
+      aim::get_lap_info(self.idx as i32, lap_idx as i32, &mut start, &mut time)
     };
     ensure!(err_code == 1, "could not fetch lap info");
 
-    Ok(LapInfo::new(start, duration))
+    Ok(LapInfo::new(lap_idx, start, time))
   }
 
   // CHANNEL INFORMATION FUNCTIONS ----------------------------------------- //
@@ -216,6 +293,22 @@ impl XdrkFile {
     }
   }
 
+  /// For channel with index `channel_idx`, request a ChannelInfo object
+  /// containing name, unit and samples count from this `XdrkFile`.
+  pub fn channel_info(&self, channel_idx: usize) -> Result<ChannelInfo> {
+    Ok(ChannelInfo::new(self.channel_name(channel_idx)?,
+                        self.channel_unit(channel_idx)?,
+                        self.channel_samples_count(channel_idx)?))
+  }
+
+  /// For channel with index `channel_idx`, request a ChannelData object
+  /// containing name, unit and samples count from this `XdrkFile`.
+  pub fn channel_data(&self, channel_idx: usize) -> Result<ChannelInfo> {
+    Ok(ChannelInfo::new(self.channel_name(channel_idx)?,
+                        self.channel_unit(channel_idx)?,
+                        self.channel_samples_count(channel_idx)?))
+  }
+
   /// For channel with index `channel_idx`, request the samples contained in
   /// this `XdrkFile`.
   ///
@@ -239,19 +332,6 @@ impl XdrkFile {
     ensure!(read == count as i32, "error reading channel samples");
 
     Ok(ChannelData::from_tsc(timestamps, samples, count))
-  }
-
-  /// For a lap with index 'lap_idx' returns the data belonging to this lap as
-  /// vector of Channel objects
-  pub fn lap_data(&self, lap_idx: usize) -> Result<Vec<Channel>> {
-    let channel_count = self.channels_count()?;
-    let mut channels: Vec<Channel> = Vec::new();
-    for i in 0..channel_count {
-      let channel_data = self.lap_channel_samples(lap_idx, i)?;
-      let channel_name = self.channel_name(i)?;
-      channels.push(Channel::new(channel_name, channel_data));
-    }
-    Ok(channels)
   }
 
   /// For lap with index `lap_idx` and channel with index `channel_idx`,
@@ -658,7 +738,7 @@ mod tests {
                xrk_file.date_time().unwrap());
 
     assert_eq!(4, xrk_file.laps_count().unwrap());
-    assert_eq!(LapInfo::new(383.258, 170.488),
+    assert_eq!(LapInfo::new(2, 383.258, 170.488),
                xrk_file.lap_info(2).unwrap());
 
     // CHANNEL INFORMATION FUNCTIONS --------------------------------------- //

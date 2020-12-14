@@ -21,16 +21,19 @@ impl Lap {
   }
 }
 
-/// Stores the start time within the recording and the duration of a lap.
+/// Stores the start time within the recording and the time of a lap.
 #[derive(Debug, PartialEq, CopyGetters)]
 #[getset(get_copy = "pub")]
 pub struct LapInfo {
-  start:    f64,
-  duration: f64,
+  number: usize,
+  start:  f64,
+  time:   f64,
 }
 
 impl LapInfo {
-  pub fn new(start: f64, duration: f64) -> Self {
-    Self { start, duration }
+  pub fn new(number: usize, start: f64, time: f64) -> Self {
+    Self { number,
+           start,
+           time }
   }
 }
