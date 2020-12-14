@@ -5,7 +5,7 @@
 //   Jonas Reitemeyer <jonas@bmc-labs.com>
 
 use super::{service as srv,
-            xdrkbindings as aim,
+            xdrk_bindings as aim,
             Channel,
             ChannelData,
             ChannelInfo,
@@ -38,6 +38,9 @@ impl Drop for XdrkFile {
 
 impl XdrkFile {
   // CONVENIENCE FUNCTIONS ------------------------------------------------- //
+  /// Request a list of all channel names which occur in this `XdrkFile`. Fails
+  /// if the library call fails for any reason, either on finding all channels
+  /// of on requesting channel names.
   pub fn channel_names(&self) -> Result<Vec<String>> {
     let mut names = Vec::with_capacity(self.channels_count()?);
     for idx in 0..names.capacity() {
@@ -46,6 +49,9 @@ impl XdrkFile {
     Ok(names)
   }
 
+  /// Request a list of all channel units which occur in this `XdrkFile`. Fails
+  /// if the library call fails for any reason, either on finding all channels
+  /// of on requesting channel units.
   pub fn channel_units(&self) -> Result<Vec<String>> {
     let mut units = Vec::with_capacity(self.channels_count()?);
     for idx in 0..units.capacity() {
@@ -54,6 +60,9 @@ impl XdrkFile {
     Ok(units)
   }
 
+  /// Request a list of `ChannelInfo` objects which correspond to all channels
+  /// which occur in this `XdrkFile`. Fails if the library call fails for any
+  /// reason, either on finding all channels or on requesting `ChannelInfo`s.
   pub fn channel_infos(&self) -> Result<Vec<ChannelInfo>> {
     let mut channel_infos = Vec::with_capacity(self.channels_count()?);
     for idx in 0..channel_infos.capacity() {
@@ -62,6 +71,8 @@ impl XdrkFile {
     Ok(channel_infos)
   }
 
+  /// Request a `Channel` object by name. Fails if no channel with that name
+  /// exists or the library call fails for any reason.
   pub fn channel(&self, name: &str) -> Result<Channel> {
     let (idx, info) = self.channel_infos()?
                           .into_iter()
@@ -72,6 +83,11 @@ impl XdrkFile {
     Ok(Channel::new(info, self.channel_samples(idx)?))
   }
 
+  /// Request a list of `Channel` objects. A lap index may be passed as
+  /// `Some(index)`, otherwise `None` must be passed. `channels` will return
+  /// channels with data from on lap, or all laps of this `XdrkFile`.  Fails if
+  /// the `lap_idx` is out of range (i.e. the `XdrkFile` does not contain a lap
+  /// with that index) or the library call fails for any reason.
   pub fn channels(&self, lap_idx: Option<usize>) -> Result<Vec<Channel>> {
     let mut channels = Vec::with_capacity(self.channels_count()?);
     for idx in 0..channels.capacity() {
@@ -85,14 +101,21 @@ impl XdrkFile {
     Ok(channels)
   }
 
+  /// Convenience wrapper for getting all channels contained in this
+  /// `XdrkFile`. Calls `self.channels(None)`.
   pub fn all_channels(&self) -> Result<Vec<Channel>> {
     self.channels(None)
   }
 
+  /// Convenience wrapper for getting all channels contained in this `XdrkFile`
+  /// for a given lap. Calls `self.channels(Some(lap_idx))`.
   pub fn channels_in_lap(&self, lap_idx: usize) -> Result<Vec<Channel>> {
     self.channels(Some(lap_idx))
   }
 
+  /// Request a list of `LapInfo` objects which correspond to all laps which
+  /// occur in this `XdrkFile`. Fails if the library call fails for any reason,
+  /// either on finding all laps or on requesting `LapInfo`s.
   pub fn lap_infos(&self) -> Result<Vec<LapInfo>> {
     let mut lap_infos = Vec::with_capacity(self.laps_count()?);
     for idx in 0..lap_infos.capacity() {
@@ -101,12 +124,19 @@ impl XdrkFile {
     Ok(lap_infos)
   }
 
-  /// For a lap with index 'lap_idx' returns the data belonging to this lap as
-  /// vector of Channel objects
+  /// For lap with index `idx`, request all channels. Returns a Lap object or
+  /// an error if `idx` is out of range (i.e. the `XdrkFile` does not contain a
+  /// lap with that index) or the library call fails for any reason.
+  ///
+  /// `Lap` objects contain a `LapInfo` object and a `Vec<Channel>` containing
+  /// all data recorded in the lap.
   pub fn lap(&self, idx: usize) -> Result<Lap> {
     Ok(Lap::new(self.lap_info(idx)?, self.channels_in_lap(idx)?))
   }
 
+  /// Request all channels for all laps contained in this `XdrkFile`. Fails if
+  /// the library call fails for any reason, either on finding all laps or on
+  /// requesting `Lap`s.
   pub fn laps(&self) -> Result<Vec<Lap>> {
     let mut laps = Vec::with_capacity(self.laps_count()?);
     for idx in 0..laps.capacity() {

@@ -25,12 +25,12 @@
 
 mod channel;
 mod lap;
-mod rundata;
+mod run_data;
 mod service;
-mod xdrkbindings;
-mod xdrkfile;
+mod xdrk_bindings;
+mod xdrk_file;
 
 pub use channel::{Channel, ChannelData, ChannelInfo};
 pub use lap::{Lap, LapInfo};
-pub use rundata::RunData;
-pub use xdrkfile::XdrkFile;
+pub use run_data::RunData;
+pub use xdrk_file::XdrkFile;

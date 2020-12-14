@@ -7,7 +7,7 @@
 use getset::{CopyGetters, Getters, MutGetters};
 
 
-/// Holds data of a channel and additional metadata
+/// Holds data of a channel and additional metadata.
 #[derive(Debug, PartialEq, Getters)]
 #[getset(get = "pub")]
 pub struct Channel {
@@ -20,6 +20,7 @@ impl Channel {
     Self { info, data }
   }
 
+  /// Construct a new `Channel` from raw `ChannelInfo` input parameters.
   pub fn from_infos(name: String,
                     unit: String,
                     samples_count: usize,
@@ -30,6 +31,7 @@ impl Channel {
            data }
   }
 
+  /// Calculates and returns the recording frequency of the data.
   pub fn frequency(&self) -> usize {
     if self.data.is_empty() {
       return 0usize;
@@ -60,10 +62,6 @@ impl ChannelInfo {
            unit,
            sample_count }
   }
-
-  pub fn destruct(self) -> (String, String, usize) {
-    (self.name, self.unit, self.sample_count)
-  }
 }
 
 
@@ -76,20 +74,21 @@ pub struct ChannelData {
 }
 
 impl ChannelData {
-  /// Helper function which allocates memory buffers in the required format
+  /// Helper function which allocates memory buffers in the required format.
   pub fn allocate(count: usize) -> (Vec<f64>, Vec<f64>) {
     (Vec::with_capacity(count), Vec::with_capacity(count))
   }
 
-  /// Creates a new `ChannelData` object from buffers and a given buffer size
+  /// Creates a new `ChannelData` object from buffers `t` (timestamps), `s`
+  /// (samples) and a given buffer size `c` (capacity).
   pub fn from_tsc(mut timestamps: Vec<f64>,
                   mut samples: Vec<f64>,
-                  count: usize)
+                  capacity: usize)
                   -> Self
   {
     unsafe {
-      timestamps.set_len(count);
-      samples.set_len(count);
+      timestamps.set_len(capacity);
+      samples.set_len(capacity);
     }
 
     Self { timestamps,

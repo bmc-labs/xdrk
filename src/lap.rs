@@ -8,7 +8,7 @@ use super::Channel;
 use getset::{CopyGetters, Getters};
 
 
-/// Hold all channels of a single lap
+/// Hold all channels of a lap.
 #[derive(Debug, PartialEq, Getters)]
 pub struct Lap {
   info:     LapInfo,
