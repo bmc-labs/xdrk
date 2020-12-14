@@ -13,6 +13,7 @@ use std::path::Path;
 
 /// Root Object for holding all the Data, which is grouped per lap
 #[derive(Debug, PartialEq, Getters)]
+#[getset(get = "pub")]
 pub struct RunData {
   championship:  String,
   track:         String,
