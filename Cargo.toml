@@ -20,6 +20,7 @@ build = "build.rs"
 
 [dev-dependencies]
 pretty_assertions = "0.6"
+cool_asserts = "1.0"
 
 
 [dependencies]

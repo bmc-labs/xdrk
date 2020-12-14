@@ -71,6 +71,20 @@ impl XdrkFile {
     Ok(channel_infos)
   }
 
+  /// Request a list of `ChannelInfo` objects which correspond to all channels
+  /// which occur in this `XdrkFile`. Fails if the library call fails for any
+  /// reason, either on finding all channels or on requesting `ChannelInfo`s.
+  pub fn channel_infos_for_lap(&self,
+                               lap_idx: usize)
+                               -> Result<Vec<ChannelInfo>>
+  {
+    let mut channel_infos = Vec::with_capacity(self.channels_count()?);
+    for channel_idx in 0..channel_infos.capacity() {
+      channel_infos.push(self.lap_channel_info(lap_idx, channel_idx)?);
+    }
+    Ok(channel_infos)
+  }
+
   /// Request a `Channel` object by name. Fails if no channel with that name
   /// exists or the library call fails for any reason.
   pub fn channel(&self, name: &str) -> Result<Channel> {
@@ -90,13 +104,14 @@ impl XdrkFile {
   /// with that index) or the library call fails for any reason.
   pub fn channels(&self, lap_idx: Option<usize>) -> Result<Vec<Channel>> {
     let mut channels = Vec::with_capacity(self.channels_count()?);
-    for idx in 0..channels.capacity() {
-      let data = if let Some(lap_idx) = lap_idx {
-        self.lap_channel_samples(lap_idx, idx)?
+    for channel_idx in 0..channels.capacity() {
+      let (info, data) = if let Some(lap_idx) = lap_idx {
+        (self.lap_channel_info(lap_idx, channel_idx)?,
+         self.lap_channel_samples(lap_idx, channel_idx)?)
       } else {
-        self.channel_samples(idx)?
+        (self.channel_info(channel_idx)?, self.channel_samples(channel_idx)?)
       };
-      channels.push(Channel::new(self.channel_info(idx)?, data));
+      channels.push(Channel::new(info, data));
     }
     Ok(channels)
   }
@@ -362,6 +377,18 @@ impl XdrkFile {
     ensure!(read == count as i32, "error reading channel samples");
 
     Ok(ChannelData::from_tsc(timestamps, samples, count))
+  }
+
+  /// For channel with index `channel_idx`, request a ChannelInfo object
+  /// containing name, unit and samples count from lap with index `lap_idx`.
+  pub fn lap_channel_info(&self,
+                          lap_idx: usize,
+                          channel_idx: usize)
+                          -> Result<ChannelInfo>
+  {
+    Ok(ChannelInfo::new(self.channel_name(channel_idx)?,
+                        self.channel_unit(channel_idx)?,
+                        self.lap_channel_samples_count(lap_idx, channel_idx)?))
   }
 
   /// For lap with index `lap_idx` and channel with index `channel_idx`,
@@ -735,6 +762,7 @@ mod tests {
 
   #[test]
   fn xdrkfile_test() {
+    // DESTRUCTOR TEST
     // opening XRK and DRK files produces temporary files which are cleaned
     // up when the file is closed, which we do via `Drop` so it happens when
     // the object goes out of scope. to test this is working, we wrap the
@@ -754,9 +782,9 @@ mod tests {
                                                   .to_str()
                                                   .unwrap()));
     }
+    // END DESTRUCTOR TEST
 
     let xrk_file = XdrkFile::load(Path::new(XRK_PATH)).unwrap();
-
 
     // SESSION INFORMATION FUNCTIONS --------------------------------------- //
     assert_eq!("AU-RS3-R5-S-S", &xrk_file.vehicle_name().unwrap());
