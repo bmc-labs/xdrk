@@ -60,8 +60,7 @@ mod tests {
 
   #[test]
   fn path_to_cstring_test() {
-    let path_str = "./testdata/path_to_cstring_test/\
-                    WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
+    let path_str = "./testdata/WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
     let path_abs = Path::new(path_str).canonicalize().unwrap();
 
     let as_cstring = CString::new(path_abs.to_str().unwrap()).unwrap();

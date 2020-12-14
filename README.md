@@ -10,10 +10,29 @@ can be.
 Executive summary: safely use the AiM access library for XRK/DRK files.
 
 ### Build and test it
-Well, chances are you know Rust, so you'll just be dealing with the usual
-`cargo test` call for running tests. It works on both Linux and Windows 64bit;
-on Windows, you'll need to use the `x86_64-pc-windows-msvc` target which in
-turn required you to install a few GB of MSVC build tools.
+Building is canonical Rust style:
+
+```sh
+cargo build
+```
+
+It works on both Linux and Windows 64bit; on Windows, you'll need to use the
+`x86_64-pc-windows-msvc` target which in turn required you to install a few GB
+of MSVC build tools.
+
+Testing is the same, with a minor caveat. Since unfortunately the AiM library
+is not thread safe, you have to run tests using the command
+
+```sh
+cargo test -- --test-threads=1
+```
+This also means that potentially the test may run slightly longer than you
+would expect. On our machines, it doesn't interfere with the development
+process so if you are on something vaguely modern, you are not on Windows and
+you're seeing excessive run times there is probably something wrong. On
+Windows, tests run 10x longer since the AiM DLL spends between 10 and 20
+seconds opening any XRK/DRK file, a process which takes nothing close to a
+second on Linux.
 
 ### Using it
 Best is to declare it as a dependency of your project via git.

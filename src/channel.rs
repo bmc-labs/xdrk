@@ -99,3 +99,19 @@ impl ChannelData {
     self.timestamps.is_empty() && self.samples.is_empty()
   }
 }
+
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use pretty_assertions::assert_eq;
+
+  #[test]
+  fn channel_info_test() {
+    let channel_info =
+      ChannelInfo::new("warbl".to_string(), "garbl".to_string(), 42);
+    assert_eq!("warbl", channel_info.name());
+    assert_eq!("garbl", channel_info.unit());
+    assert_eq!(42, channel_info.sample_count());
+  }
+}

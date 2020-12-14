@@ -731,7 +731,7 @@ mod tests {
 
 
   static XRK_PATH: &str =
-    "./testdata/xdrkfile_test/WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
+    "./testdata/WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
 
   #[test]
   fn xdrkfile_test() {
@@ -745,7 +745,7 @@ mod tests {
     }
     // ... and then scan for temporary files afterwards
     let allowed_extensions = vec!["drk", "rrk", "xrk", "xrz"];
-    for file in fs::read_dir(Path::new("./testdata/xdrkfile_test")).unwrap() {
+    for file in fs::read_dir(Path::new("./testdata")).unwrap() {
       let file = file.unwrap();
       assert_eq!(true,
                  allowed_extensions.contains(&file.path()
