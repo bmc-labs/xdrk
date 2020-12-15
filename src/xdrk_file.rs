@@ -168,7 +168,8 @@ impl XdrkFile {
   /// `Lap` objects contain a `LapInfo` object and a `Vec<Channel>` containing
   /// all data recorded in the lap.
   pub fn lap(&self, idx: usize) -> Result<Lap> {
-    Ok(Lap::from_raw(self.lap_info(idx)?, self.raw_channels_in_lap(idx)?))
+    Ok(Lap::from_raw_channels(self.lap_info(idx)?,
+                              self.raw_channels_in_lap(idx)?))
   }
 
   /// Request all channels for all laps contained in this `XdrkFile`. Fails if
@@ -779,7 +780,7 @@ mod tests {
   use std::fs;
 
 
-  static XRK_PATH: &str =
+  const XRK_PATH: &str =
     "./testdata/WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
 
   #[test]

@@ -29,7 +29,8 @@ impl Channel {
     let name = raw.name().to_owned();
     let unit = raw.unit().to_owned();
     let frequency = raw.frequency();
-    let mut data = Vec::with_capacity((time * frequency as f64) as usize);
+    let mut data =
+      Vec::with_capacity((time * frequency as f64).ceil() as usize);
 
     let advance = 1.0 / frequency as f64;
     let threshold = 0.5 * advance;
@@ -106,23 +107,23 @@ impl RawChannel {
   /// Calculates and returns the recording frequency of the data in Hz.
   pub fn frequency(&self) -> usize {
     if self.is_empty()
-       || self.len() < 2
+       || self.len() < 3
        || self.data.timestamps().iter().sum::<f64>() < 0.1
     {
       return 0;
     }
 
-    // we multiply by 1000 and divide back through it for normalization on
-    // milliseconds. remember this is integer division so this doesn't cancel.
-    let (first, second) = (self.data.timestamps[0], self.data.timestamps[1]);
-    let raw_frequency = (1000.0 / ((second - first) * 1000.0)).round();
+    // we multiply by 500 and divide back through 1000 for normalization on
+    // milliseconds in three time steps. remember this is integer division so
+    // this doesn't cancel.
+    let (first, second) = (self.data.timestamps[0], self.data.timestamps[2]);
+    let raw_frequency = (1_000.0 / ((second - first) * 500.0)).round() as i32;
 
     FREQUENCIES.iter()
-               .find(|&&frequency| {
-                 (raw_frequency - frequency as f64).abs()
-                 < (0.25 * frequency as f64) // ±25%
+               .min_by_key(|&&frequency| {
+                 (raw_frequency - frequency as i32).abs()
                })
-               .unwrap_or(&0usize)
+               .unwrap_or(&0_usize)
                .clone()
   }
 
@@ -217,7 +218,7 @@ mod tests {
   use std::path::Path;
 
 
-  static XRK_PATH: &str =
+  const XRK_PATH: &str =
     "./testdata/WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
 
   #[test]

@@ -46,19 +46,89 @@ impl RunData {
   pub fn number_of_laps(&self) -> usize {
     self.laps.len()
   }
+
+  pub fn frequency(&self) -> usize {
+    if self.laps.is_empty() {
+      return 0;
+    }
+    let frequency = self.laps[0].frequency();
+    assert!(self.laps.iter().all(|lap| frequency == lap.frequency()));
+
+    frequency
+  }
 }
 
 
 #[cfg(test)]
 mod tests {
   use super::*;
+  use pretty_assertions::assert_eq;
 
 
-  static XRK_PATH: &str =
+  const XRK_PATH: &str =
     "./testdata/WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
 
   #[test]
   fn rundata_test() {
-    let _run_data = RunData::new(XRK_PATH).unwrap();
+    let run_data = RunData::new(XRK_PATH).unwrap();
+
+    assert_eq!("WT-20", run_data.championship());
+    assert_eq!("ARA_1-0-0", run_data.track());
+    assert_eq!("Q3", run_data.venue_type());
+    assert_eq!("AU-RS3-R5-S-S", run_data.vehicle());
+    assert_eq!("017", run_data.racer());
+
+    assert_eq!("2020-11-14 16:49:39", run_data.datetime().to_string());
+
+    macro_rules! stringvec {
+      ($($x:literal),* $(,)?) => (vec![$($x.to_string()),*]);
+    }
+    let channel_names = stringvec!["Logger Temperature",
+                                   "External Voltage",
+                                   "pManifoldScrut",
+                                   "tManifoldScrut",
+                                   "aLon",
+                                   "aLat",
+                                   "aVer",
+                                   "wRoll",
+                                   "wPitch",
+                                   "wYaw",
+                                   "bAdvance",
+                                   "bSteering",
+                                   "bVvtIn",
+                                   "bVvtOut",
+                                   "dInjection",
+                                   "fEngRpm",
+                                   "pBrakeF",
+                                   "pBrakeR",
+                                   "pManifold",
+                                   "posGear",
+                                   "pRail",
+                                   "rLambda",
+                                   "rPedal",
+                                   "rThrottle",
+                                   "swLaunchState",
+                                   "swRotFcy",
+                                   "swRotPit",
+                                   "tAmbient",
+                                   "tManifold",
+                                   "tWater",
+                                   "uBarrel",
+                                   "vWheelFL",
+                                   "vWheelFR",
+                                   "vWheelRL",
+                                   "vWheelRR",
+                                   "mEngTorq",
+                                   "mEngTorqTarget",
+                                   "posGearDSG",
+                                   "swGearUP",
+                                   "swGearDOWN"];
+    assert_eq!(&channel_names, run_data.channel_names());
+    for lap in run_data.laps() {
+      assert_eq!(channel_names, lap.channel_names());
+    }
+
+    assert_eq!(40, run_data.number_of_channels());
+    assert_eq!(4, run_data.number_of_laps());
   }
 }
