@@ -1,0 +1,25 @@
+# Changelog
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [1.2.0] - 2020-12-15
+### Added
+- loads of API for easier access to data
+- implementation of converting to a more usable format
+- synchronization of channels
+- along with synchronization: space savings by going from f64 to f32
+
+## 1.0.0 - end of November 2020
+This was basically the first version worth mentioning, and it was as stable as
+the underlying library allowed. That is, it carried all functionality of the
+raw bindings for the C based library into a robust Rust interface which hid all
+the `unsafe` ugliness from the user. The API, however, was still as basic as
+the original library provided by AiM.
+
+
+[Unreleased]: https://gitlab.bmc-labs.com/libraries/xdrk/-/compare/v1.2.0...trunk
+[1.2.0]: https://gitlab.bmc-labs.com/libraries/xdrk/-/releases/v1.2.0
