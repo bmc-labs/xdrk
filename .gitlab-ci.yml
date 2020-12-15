@@ -9,19 +9,26 @@ stages:
 test:cargo:
   stage: test
   tags:
+    - coverage
     - rust
   script:
     - rustc --version && cargo --version  # Print version info for debugging
-    - cargo test --workspace --verbose -- --test-threads=1
+    - sh coverage.sh
+  artifacts:
+    paths:
+      - coverage/html
 
 pages:
   stage: doc
   tags:
     - rust
+  needs:
+    - test:cargo
   script:
     - cargo doc --no-deps
     - mv target/doc public
     - echo '<meta http-equiv="refresh" content="0; url=xdrk">' > public/index.html
+    - cp -r coverage/html/* public/covr
   artifacts:
     paths:
       - public
