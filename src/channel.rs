@@ -213,7 +213,6 @@ impl IntoIterator for ChannelData {
 #[cfg(test)]
 mod tests {
   use super::{super::XdrkFile, *};
-  use cool_asserts::assert_panics;
   use pretty_assertions::assert_eq;
   use std::path::Path;
 
@@ -243,40 +242,57 @@ mod tests {
   }
 
   #[test]
-  fn raw_channel_test() {
+  #[should_panic]
+  fn raw_channel_new_panic_test() {
     let (correct_size, panic_size) = (42, 1337);
-    // unhappy path tests for constructors
     let channel_info =
       ChannelInfo::new("warbl".to_string(), "garbl".to_string(), panic_size);
     let raw_channel_data =
       ChannelData::from_tsc(Vec::with_capacity(correct_size),
                             Vec::with_capacity(correct_size),
                             correct_size);
-    assert_panics!(RawChannel::new(channel_info, raw_channel_data.clone()));
-    assert_panics!(RawChannel::from_nucd("warbl".to_string(),
-                                         "garbl".to_string(),
-                                         panic_size,
-                                         raw_channel_data.clone()));
+    let _panic = RawChannel::new(channel_info, raw_channel_data.clone());
+  }
 
+  #[test]
+  #[should_panic]
+  fn raw_channel_from_nucd_panic_test() {
+    let (correct_size, panic_size) = (42, 1337);
+    let raw_channel_data =
+      ChannelData::from_tsc(Vec::with_capacity(correct_size),
+                            Vec::with_capacity(correct_size),
+                            correct_size);
+    let _panic = RawChannel::from_nucd("warbl".to_string(),
+                                       "garbl".to_string(),
+                                       panic_size,
+                                       raw_channel_data.clone());
+  }
+
+  #[test]
+  fn raw_channel_test() {
     // happy path tests without context
+    let size = 42;
     let channel_info =
-      ChannelInfo::new("warbl".to_string(), "garbl".to_string(), correct_size);
+      ChannelInfo::new("warbl".to_string(), "garbl".to_string(), size);
+    let raw_channel_data = ChannelData::from_tsc(Vec::with_capacity(size),
+                                                 Vec::with_capacity(size),
+                                                 size);
     let raw_channel = RawChannel::new(channel_info, raw_channel_data.clone());
     assert_eq!("warbl", raw_channel.name());
     assert_eq!("garbl", raw_channel.unit());
     assert_eq!(0, raw_channel.frequency());
     assert_eq!(false, raw_channel.is_empty());
-    assert_eq!(correct_size, raw_channel.len());
+    assert_eq!(size, raw_channel.len());
 
     let raw_channel = RawChannel::from_nucd("warbl".to_string(),
                                             "garbl".to_string(),
-                                            correct_size,
+                                            size,
                                             raw_channel_data.clone());
     assert_eq!("warbl", raw_channel.name());
     assert_eq!("garbl", raw_channel.unit());
     assert_eq!(0, raw_channel.frequency());
     assert_eq!(false, raw_channel.is_empty());
-    assert_eq!(correct_size, raw_channel.len());
+    assert_eq!(size, raw_channel.len());
 
     // tests with context
     let raw_channel =
@@ -300,35 +316,57 @@ mod tests {
   }
 
   #[test]
-  fn channel_data_test() {
-    // unhappy path test for constructor
+  #[should_panic]
+  fn channel_data_from_tsc_panic_first_test() {
     let (first_size, second_size) = (42, 1337);
     let (timestamps, samples) =
       (Vec::with_capacity(first_size), Vec::with_capacity(second_size));
-    assert_panics!(ChannelData::from_tsc(timestamps.clone(),
-                                         samples.clone(),
-                                         first_size));
-    assert_panics!(ChannelData::from_tsc(timestamps.clone(),
-                                         samples.clone(),
-                                         second_size));
-    assert_panics!(ChannelData::from_tsc(timestamps.clone(),
-                                         samples.clone(),
-                                         1234));
+    let _panic =
+      ChannelData::from_tsc(timestamps.clone(), samples.clone(), first_size);
+  }
 
+  #[test]
+  #[should_panic]
+  fn channel_data_from_tsc_panic_second_test() {
+    let (first_size, second_size) = (42, 1337);
+    let (timestamps, samples) =
+      (Vec::with_capacity(first_size), Vec::with_capacity(second_size));
+    let _panic =
+      ChannelData::from_tsc(timestamps.clone(), samples.clone(), second_size);
+  }
+
+  #[test]
+  #[should_panic]
+  fn channel_data_from_tsc_panic_third_test() {
+    let (first_size, second_size) = (42, 1337);
+    let (timestamps, samples) =
+      (Vec::with_capacity(first_size), Vec::with_capacity(second_size));
+    let _panic =
+      ChannelData::from_tsc(timestamps.clone(), samples.clone(), 1234);
+  }
+
+  #[test]
+  #[should_panic]
+  fn channel_data_len_panic_test() {
+    let (timestamps, samples) = ChannelData::allocate(42);
+    let mut channel_data = ChannelData::from_tsc(timestamps, samples, 42);
+
+    // add timestamp and assert that we know panic when asking for len because
+    // we have more timestamps than samples
+    channel_data.timestamps_mut().push(123.456);
+    let _panic = channel_data.len();
+  }
+
+  #[test]
+  fn channel_data_test() {
     // test without context
     let (timestamps, samples) = ChannelData::allocate(42);
     assert_eq!(42, timestamps.capacity());
     assert_eq!(42, samples.capacity());
 
-    let mut channel_data = ChannelData::from_tsc(timestamps, samples, 42);
+    let channel_data = ChannelData::from_tsc(timestamps, samples, 42);
     assert_eq!(42, channel_data.timestamps().len());
     assert_eq!(42, channel_data.samples().len());
-
-    // add timestamp and assert that we know panic when asking for len because
-    // we have more timestamps than samples
-    channel_data.timestamps_mut().push(123.456);
-    assert_panics!(channel_data.len());
-    assert_panics!(channel_data.is_empty());
 
     // tests with context from test data
     let channel_data =

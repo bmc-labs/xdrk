@@ -12,24 +12,26 @@ export RUSTDOCFLAGS="-Cpanic=abort"
 
 # build and run tests using these two commands in every component directory
 cargo build
-cargo test --workspace --verbose -- --test-threads=1
+# cargo test --workspace --verbose -- --test-threads=1
+cargo test --workspace -- --test-threads=1
 
 # use grcov to generate report info
-mkdir coverage
+mkdir -p ./target/coverage
 grcov -s . --llvm --branch --ignore-not-existing \
-      -o coverage/full.info ./target/debug
+      -o ./target/coverage/full.info ./target/debug
 
 # filter the report using lcov
-lcov --extract coverage/full.info \
-     "babylon/src/*"              \
-     "carrier/src/*"              \
-     "dock/src/*"                 \
-     "util/src/*"                 \
-     -o coverage/dock.info
+lcov --extract ./target/coverage/full.info \
+     "src/xdrk_file.rs"           \
+     "src/run_data.rs"            \
+     "src/lap.rs"                 \
+     "src/channel.rs"             \
+     "src/service.rs"             \
+     -o ./target/coverage/xdrk.info
 
 # generate report for GitLab CI
-lcov --list coverage/dock.info
+lcov --list ./target/coverage/xdrk.info
 
 # finally, generate HTML
 genhtml --show-details --highlight --ignore-errors source --legend \
-        -o ./coverage/html ./coverage/dock.info
+        -o ./target/coverage/html ./target/coverage/xdrk.info

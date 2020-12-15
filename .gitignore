@@ -2,7 +2,7 @@
 /target/
 Cargo.lock
 
-### Aim ###
+### AiM ###
 *.tmp
 
 ### Vim ###

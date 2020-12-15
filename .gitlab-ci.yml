@@ -16,7 +16,7 @@ test:cargo:
     - sh coverage.sh
   artifacts:
     paths:
-      - coverage/html
+      - target/coverage/html
 
 pages:
   stage: doc
@@ -28,7 +28,7 @@ pages:
     - cargo doc --no-deps
     - mv target/doc public
     - echo '<meta http-equiv="refresh" content="0; url=xdrk">' > public/index.html
-    - cp -r coverage/html/* public/covr
+    - cp -r target/coverage/html/* public/covr
   artifacts:
     paths:
       - public
