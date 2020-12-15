@@ -12,7 +12,6 @@ export RUSTDOCFLAGS="-Cpanic=abort"
 
 # build and run tests using these two commands in every component directory
 cargo build
-# cargo test --workspace --verbose -- --test-threads=1
 cargo test --workspace -- --test-threads=1
 
 # use grcov to generate report info
@@ -22,11 +21,11 @@ grcov -s . --llvm --branch --ignore-not-existing \
 
 # filter the report using lcov
 lcov --extract ./target/coverage/full.info \
-     "src/xdrk_file.rs"           \
-     "src/run_data.rs"            \
-     "src/lap.rs"                 \
-     "src/channel.rs"             \
-     "src/service.rs"             \
+     "src/xdrk_file.rs"                    \
+     "src/run_data.rs"                     \
+     "src/lap.rs"                          \
+     "src/channel.rs"                      \
+     "src/service.rs"                      \
      -o ./target/coverage/xdrk.info
 
 # generate report for GitLab CI
