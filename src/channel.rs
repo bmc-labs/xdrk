@@ -8,8 +8,11 @@ use getset::{CopyGetters, Getters, MutGetters};
 use std::{iter, vec};
 
 
+const FREQUENCIES: [usize; 10] = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
+
+
 /// Holds synchronized channel data.
-#[derive(Clone, Debug, PartialEq, Getters)]
+#[derive(Clone, Debug, PartialEq, CopyGetters, Getters)]
 pub struct Channel {
   #[getset(get = "pub")]
   name:      String,
@@ -109,8 +112,18 @@ impl RawChannel {
       return 0;
     }
 
-    let interval = self.data.timestamps()[1] - self.data.timestamps()[0];
-    (1000.0 / (interval * 1000.0)).round() as usize
+    // we multiply by 1000 and divide back through it for normalization on
+    // milliseconds. remember this is integer division so this doesn't cancel.
+    let (first, second) = (self.data.timestamps[0], self.data.timestamps[1]);
+    let raw_frequency = (1000.0 / ((second - first) * 1000.0)).round();
+
+    FREQUENCIES.iter()
+               .find(|&&frequency| {
+                 (raw_frequency - frequency as f64).abs()
+                 < (0.25 * frequency as f64) // ±25%
+               })
+               .unwrap_or(&0usize)
+               .clone()
   }
 
   pub fn len(&self) -> usize {
@@ -208,49 +221,72 @@ mod tests {
     "./testdata/WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
 
   #[test]
+  fn channel_test() {
+    let xdrk_file = XdrkFile::load(Path::new(XRK_PATH)).unwrap();
+
+    let raw_channel = xdrk_file.raw_channel("pManifoldScrut").unwrap();
+    let channel = Channel::from_raw_channel(raw_channel, 580.205);
+    assert_eq!("pManifoldScrut", channel.name());
+    assert_eq!("bar", channel.unit());
+    assert_eq!(100, channel.frequency());
+    assert_eq!(false, channel.is_empty());
+    assert_eq!(58021, channel.len());
+
+    let raw_channel = xdrk_file.raw_channel_in_lap("fEngRpm", 1).unwrap();
+    let channel = Channel::from_raw_channel(raw_channel, 133.749);
+    assert_eq!("fEngRpm", channel.name());
+    assert_eq!("rpm", channel.unit());
+    assert_eq!(100, channel.frequency());
+    assert_eq!(false, channel.is_empty());
+    assert_eq!(13375, channel.len());
+  }
+
+  #[test]
   fn raw_channel_test() {
     let (correct_size, panic_size) = (42, 1337);
     // unhappy path tests for constructors
     let channel_info =
       ChannelInfo::new("warbl".to_string(), "garbl".to_string(), panic_size);
-    let channel_data = ChannelData::from_tsc(Vec::with_capacity(correct_size),
-                                             Vec::with_capacity(correct_size),
-                                             correct_size);
-    assert_panics!(RawChannel::new(channel_info, channel_data.clone()));
+    let raw_channel_data =
+      ChannelData::from_tsc(Vec::with_capacity(correct_size),
+                            Vec::with_capacity(correct_size),
+                            correct_size);
+    assert_panics!(RawChannel::new(channel_info, raw_channel_data.clone()));
     assert_panics!(RawChannel::from_nucd("warbl".to_string(),
                                          "garbl".to_string(),
                                          panic_size,
-                                         channel_data.clone()));
+                                         raw_channel_data.clone()));
 
     // happy path tests without context
     let channel_info =
       ChannelInfo::new("warbl".to_string(), "garbl".to_string(), correct_size);
-    let channel = RawChannel::new(channel_info, channel_data.clone());
-    assert_eq!("warbl", channel.name());
-    assert_eq!("garbl", channel.unit());
-    assert_eq!(0, channel.frequency());
-    assert_eq!(false, channel.is_empty());
-    assert_eq!(correct_size, channel.len());
+    let raw_channel = RawChannel::new(channel_info, raw_channel_data.clone());
+    assert_eq!("warbl", raw_channel.name());
+    assert_eq!("garbl", raw_channel.unit());
+    assert_eq!(0, raw_channel.frequency());
+    assert_eq!(false, raw_channel.is_empty());
+    assert_eq!(correct_size, raw_channel.len());
 
-    let channel = RawChannel::from_nucd("warbl".to_string(),
-                                        "garbl".to_string(),
-                                        correct_size,
-                                        channel_data.clone());
-    assert_eq!("warbl", channel.name());
-    assert_eq!("garbl", channel.unit());
-    assert_eq!(0, channel.frequency());
-    assert_eq!(false, channel.is_empty());
-    assert_eq!(correct_size, channel.len());
+    let raw_channel = RawChannel::from_nucd("warbl".to_string(),
+                                            "garbl".to_string(),
+                                            correct_size,
+                                            raw_channel_data.clone());
+    assert_eq!("warbl", raw_channel.name());
+    assert_eq!("garbl", raw_channel.unit());
+    assert_eq!(0, raw_channel.frequency());
+    assert_eq!(false, raw_channel.is_empty());
+    assert_eq!(correct_size, raw_channel.len());
 
     // tests with context
-    let channel = XdrkFile::load(Path::new(XRK_PATH)).unwrap()
-                                                     .channel("pManifoldScrut")
-                                                     .unwrap();
-    assert_eq!("pManifoldScrut", channel.name());
-    assert_eq!("bar", channel.unit());
-    assert_eq!(100, channel.frequency());
-    assert_eq!(false, channel.is_empty());
-    assert_eq!(57980, channel.len());
+    let raw_channel =
+      XdrkFile::load(Path::new(XRK_PATH)).unwrap()
+                                         .raw_channel("pManifoldScrut")
+                                         .unwrap();
+    assert_eq!("pManifoldScrut", raw_channel.name());
+    assert_eq!("bar", raw_channel.unit());
+    assert_eq!(100, raw_channel.frequency());
+    assert_eq!(false, raw_channel.is_empty());
+    assert_eq!(57980, raw_channel.len());
   }
 
   #[test]
@@ -296,7 +332,7 @@ mod tests {
     // tests with context from test data
     let channel_data =
       XdrkFile::load(Path::new(XRK_PATH)).unwrap()
-                                         .channel("pManifoldScrut")
+                                         .raw_channel("pManifoldScrut")
                                          .unwrap()
                                          .data()
                                          .clone();

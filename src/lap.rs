@@ -26,6 +26,7 @@ impl Lap {
   }
 
   pub fn from_raw(info: LapInfo, raw_channels: Vec<RawChannel>) -> Self {
+    println!("{:#?}", info);
     let channels =
       raw_channels.into_iter()
                   .map(|c| Channel::from_raw_channel(c, info.time()))
