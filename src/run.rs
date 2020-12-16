@@ -14,7 +14,7 @@ use std::path::Path;
 /// Holds all information and data corresponding to one run.
 #[derive(Debug, PartialEq, Getters)]
 #[getset(get = "pub")]
-pub struct RunData {
+pub struct Run {
   championship:  String, // "WT-20_E05"
   track:         String, // "ARA"
   venue_type:    String, // "Q3"
@@ -25,7 +25,7 @@ pub struct RunData {
   laps:          Vec<Lap>,
 }
 
-impl RunData {
+impl Run {
   pub fn new(path: &str) -> Result<Self> {
     let xdrk = XdrkFile::load(Path::new(path))?;
 
@@ -70,15 +70,15 @@ mod tests {
 
   #[test]
   fn rundata_test() {
-    let run_data = RunData::new(XRK_PATH).unwrap();
+    let run = Run::new(XRK_PATH).unwrap();
 
-    assert_eq!("WT-20", run_data.championship());
-    assert_eq!("ARA_1-0-0", run_data.track());
-    assert_eq!("Q3", run_data.venue_type());
-    assert_eq!("AU-RS3-R5-S-S", run_data.vehicle());
-    assert_eq!("017", run_data.racer());
+    assert_eq!("WT-20", run.championship());
+    assert_eq!("ARA_1-0-0", run.track());
+    assert_eq!("Q3", run.venue_type());
+    assert_eq!("AU-RS3-R5-S-S", run.vehicle());
+    assert_eq!("017", run.racer());
 
-    assert_eq!("2020-11-14 16:49:39", run_data.datetime().to_string());
+    assert_eq!("2020-11-14 16:49:39", run.datetime().to_string());
 
     macro_rules! stringvec {
       ($($x:literal),* $(,)?) => (vec![$($x.to_string()),*]);
@@ -123,12 +123,12 @@ mod tests {
                                    "posGearDSG",
                                    "swGearUP",
                                    "swGearDOWN"];
-    assert_eq!(&channel_names, run_data.channel_names());
-    for lap in run_data.laps() {
+    assert_eq!(&channel_names, run.channel_names());
+    for lap in run.laps() {
       assert_eq!(channel_names, lap.channel_names());
     }
 
-    assert_eq!(40, run_data.number_of_channels());
-    assert_eq!(4, run_data.number_of_laps());
+    assert_eq!(40, run.number_of_channels());
+    assert_eq!(4, run.number_of_laps());
   }
 }
