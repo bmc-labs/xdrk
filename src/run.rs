@@ -15,8 +15,8 @@ use std::path::Path;
 #[derive(Debug, PartialEq, Getters)]
 #[getset(get = "pub")]
 pub struct Run {
-  championship:  String, // "WT-20_E05"
-  track:         String, // "ARA"
+  championship:  String, // "WT-20_E05-ARA"
+  track:         String, // "ARA_1-0-0"
   venue_type:    String, // "Q3"
   vehicle:       String, // "HY-i30N-C4-X-S"
   racer:         String, // "030"
