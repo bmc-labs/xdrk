@@ -128,15 +128,17 @@ mod tests {
     assert_eq!("pManifoldScrut", channel.name());
     assert_eq!("bar", channel.unit());
     assert_eq!(100, channel.frequency());
-    assert_eq!(false, channel.is_empty());
     assert_eq!(58021, channel.len());
+    assert_eq!(false, channel.is_empty());
+    assert_eq!(0.0, channel.data()[0]);
 
     let raw_channel = xdrk_file.raw_channel(15, Some(1)).unwrap();
     let channel = Channel::from_raw_channel(raw_channel, 133.749);
     assert_eq!("fEngRpm", channel.name());
     assert_eq!("rpm", channel.unit());
     assert_eq!(100, channel.frequency());
-    assert_eq!(false, channel.is_empty());
     assert_eq!(13375, channel.len());
+    assert_eq!(false, channel.is_empty());
+    assert_eq!(0.0, channel.data()[0]);
   }
 }

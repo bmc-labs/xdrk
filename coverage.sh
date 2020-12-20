@@ -16,16 +16,21 @@ cargo test --workspace -- --test-threads=1
 
 # use grcov to generate report info
 mkdir -p ./target/coverage
-grcov -s . --llvm --branch --ignore-not-existing \
+grcov -s . --llvm --branch --ignore-not-existing    \
+      --excl-br-start "mod tests \{"                \
+      --excl-start "mod tests \{"                   \
+      --excl-br-line "#\[derive\(|^/{2,3}|impl"     \
+      --excl-line "#\[derive\(|^/{2,3}|impl"        \
       -o ./target/coverage/full.info ./target/debug
 
 # filter the report using lcov
 lcov --extract ./target/coverage/full.info \
-     "src/xdrk_file.rs"                    \
-     "src/run_data.rs"                     \
-     "src/lap.rs"                          \
      "src/channel.rs"                      \
+     "src/lap.rs"                          \
+     "src/raw_channel.rs"                  \
+     "src/run.rs"                          \
      "src/service.rs"                      \
+     "src/xdrk_file.rs"                    \
      -o ./target/coverage/xdrk.info
 
 # generate report for GitLab CI

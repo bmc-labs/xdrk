@@ -37,7 +37,6 @@ impl Lap {
       raw_channels.into_iter()
                   .map(|c| Channel::from_raw_channel(c, info.time()))
                   .collect();
-
     Self::new(info, channels)
   }
 
@@ -90,15 +89,12 @@ mod tests {
 
   #[test]
   fn lap_test() {
-    println!("loading xrk file...");
     let xdrk_file = XdrkFile::load(Path::new(XRK_PATH)).unwrap();
 
-    println!("done loading. selecting lap...");
     let lap = xdrk_file.lap(1).unwrap();
     assert_eq!(1, lap.number());
     assert_eq!(249.509, lap.start());
     assert_eq!(133.749, lap.time());
-    println!("all good with the lap. loading channels...");
 
     macro_rules! stringvec {
       ($($x:literal),* $(,)?) => (vec![$($x.to_string()),*]);
@@ -160,6 +156,8 @@ mod tests {
       assert_eq!((lap.time() * channel.frequency() as f64).ceil() as usize,
                  channel.len());
     }
+
+    assert_eq!(100, lap.frequency());
   }
 
   #[test]
