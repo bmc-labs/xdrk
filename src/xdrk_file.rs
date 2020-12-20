@@ -198,8 +198,11 @@ impl XdrkFile {
   /// all data recorded in the lap.
   pub fn lap(&self, lap_idx: usize) -> Result<Lap> {
     let mut raw_channels = Vec::with_capacity(self.number_of_channels()?);
-    for channel_name in self.channel_names()? {
-      raw_channels.push(self.raw_channel(&channel_name, Some(lap_idx))?);
+    for channel_idx in 0..self.number_of_channels()? {
+      println!("loading channel with index {} - '{}'",
+               channel_idx,
+               self.channel_name(channel_idx)?);
+      raw_channels.push(self.raw_channel(channel_idx, Some(lap_idx))?);
     }
     Ok(Lap::from_raw_channels(self.lap_info(lap_idx)?, raw_channels))
   }
@@ -265,9 +268,8 @@ impl XdrkFile {
     Ok(channel_idx)
   }
 
-  /// For channel with name `channel_name`, request the channel unit.
-  pub fn channel_unit(&self, channel_name: &str) -> Result<String> {
-    let channel_idx = self.channel_idx(channel_name)?;
+  /// For channel with index `channel_idx`, request the channel unit.
+  pub fn channel_unit(&self, channel_idx: usize) -> Result<String> {
     srv::strptr_to_string(unsafe {
       if channel_idx < self.channels_count()? {
         aim::get_channel_units(self.idx as i32, channel_idx as i32)
@@ -283,24 +285,22 @@ impl XdrkFile {
   /// call fails for any reason. Pass `None` for lap to get the raw channel
   /// with data from all laps.
   pub fn raw_channel(&self,
-                     channel_name: &str,
+                     channel_idx: usize,
                      lap_idx: Option<usize>)
                      -> Result<RawChannel>
   {
-    Ok(RawChannel::new(channel_name.to_owned(),
-                       self.channel_unit(channel_name)?,
-                       self.raw_channel_data(channel_name, lap_idx)?))
+    Ok(RawChannel::new(self.channel_name(channel_idx)?,
+                       self.channel_unit(channel_idx)?,
+                       self.raw_channel_data(channel_idx, lap_idx)?))
   }
 
   /// For channel with name `channel_name`, collect the measurement samples in
   /// a `RawChannelData` object. Data is unsynchronized. GPS data included.
   pub fn raw_channel_data(&self,
-                          channel_name: &str,
+                          channel_idx: usize,
                           lap_idx: Option<usize>)
                           -> Result<RawChannelData>
   {
-    let channel_idx = self.channel_idx(channel_name)?;
-
     if let Some(lap_idx) = lap_idx {
       if channel_idx < self.channels_count()? {
         self.lap_channel_samples(lap_idx, channel_idx)
