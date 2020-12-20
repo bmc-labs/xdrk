@@ -90,12 +90,15 @@ mod tests {
 
   #[test]
   fn lap_test() {
+    println!("loading xrk file...");
     let xdrk_file = XdrkFile::load(Path::new(XRK_PATH)).unwrap();
 
+    println!("done loading. selecting lap...");
     let lap = xdrk_file.lap(1).unwrap();
     assert_eq!(1, lap.number());
     assert_eq!(249.509, lap.start());
     assert_eq!(133.749, lap.time());
+    println!("all good with the lap. loading channels...");
 
     macro_rules! stringvec {
       ($($x:literal),* $(,)?) => (vec![$($x.to_string()),*]);
@@ -139,7 +142,18 @@ mod tests {
                                    "mEngTorqTarget",
                                    "posGearDSG",
                                    "swGearUP",
-                                   "swGearDOWN"];
+                                   "swGearDOWN",
+                                   "GPS Speed",
+                                   "GPS Nsat",
+                                   "GPS LatAcc",
+                                   "GPS LonAcc",
+                                   "GPS Slope",
+                                   "GPS Heading",
+                                   "GPS Gyro",
+                                   "GPS Altitude",
+                                   "GPS PosAccuracy",
+                                   "GPS SpdAccuracy",
+                                   "GPS Radius",];
     assert_eq!(channel_names, lap.channel_names());
 
     for channel in lap.channels() {
