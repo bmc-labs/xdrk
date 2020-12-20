@@ -843,11 +843,11 @@ mod tests {
     assert_eq!("GPS Speed", &xrk_file.channel_name(40).unwrap());
     assert_eq!("GPS Nsat", &xrk_file.channel_name(41).unwrap());
 
-    assert_eq!("C", &xrk_file.channel_unit("Logger Temperature").unwrap());
-    assert_eq!("bar", &xrk_file.channel_unit("pManifoldScrut").unwrap());
-    assert_eq!("rpm", &xrk_file.channel_unit("fEngRpm").unwrap());
-    assert_eq!("m/s", &xrk_file.channel_unit("GPS Speed").unwrap());
-    assert_eq!("#", &xrk_file.channel_unit("GPS Nsat").unwrap());
+    assert_eq!("C", &xrk_file.channel_unit(0).unwrap());
+    assert_eq!("bar", &xrk_file.channel_unit(2).unwrap());
+    assert_eq!("rpm", &xrk_file.channel_unit(15).unwrap());
+    assert_eq!("m/s", &xrk_file.channel_unit(40).unwrap());
+    assert_eq!("#", &xrk_file.channel_unit(41).unwrap());
 
     assert_eq!(553, xrk_file.channel_samples_count(0).unwrap());
     assert_eq!(57980, xrk_file.channel_samples_count(2).unwrap());

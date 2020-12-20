@@ -123,7 +123,7 @@ mod tests {
   fn channel_test() {
     let xdrk_file = XdrkFile::load(Path::new(XRK_PATH)).unwrap();
 
-    let raw_channel = xdrk_file.raw_channel("pManifoldScrut", None).unwrap();
+    let raw_channel = xdrk_file.raw_channel(2, None).unwrap();
     let channel = Channel::from_raw_channel(raw_channel, 580.205);
     assert_eq!("pManifoldScrut", channel.name());
     assert_eq!("bar", channel.unit());
@@ -131,7 +131,7 @@ mod tests {
     assert_eq!(false, channel.is_empty());
     assert_eq!(58021, channel.len());
 
-    let raw_channel = xdrk_file.raw_channel("fEngRpm", Some(1)).unwrap();
+    let raw_channel = xdrk_file.raw_channel(15, Some(1)).unwrap();
     let channel = Channel::from_raw_channel(raw_channel, 133.749);
     assert_eq!("fEngRpm", channel.name());
     assert_eq!("rpm", channel.unit());

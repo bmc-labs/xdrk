@@ -150,7 +150,7 @@ mod tests {
     // tests with context
     let raw_channel =
       XdrkFile::load(Path::new(XRK_PATH)).unwrap()
-                                         .raw_channel("pManifoldScrut", None)
+                                         .raw_channel(2, None)
                                          .unwrap();
     assert_eq!("pManifoldScrut", raw_channel.name());
     assert_eq!("bar", raw_channel.unit());
@@ -217,7 +217,7 @@ mod tests {
     // tests with context from test data
     let channel_data =
       XdrkFile::load(Path::new(XRK_PATH)).unwrap()
-                                         .raw_channel("pManifoldScrut", None)
+                                         .raw_channel(2, None)
                                          .unwrap()
                                          .data()
                                          .clone();
