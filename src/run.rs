@@ -53,7 +53,6 @@ impl Run {
     }
     let frequency = self.laps[0].frequency();
     assert!(self.laps.iter().all(|lap| frequency == lap.frequency()));
-
     frequency
   }
 }
@@ -62,7 +61,7 @@ impl Run {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use pretty_assertions::assert_eq;
+  use pretty_assertions::{assert_eq, assert_ne};
 
 
   const XRK_PATH: &str =
@@ -141,5 +140,9 @@ mod tests {
 
     assert_eq!(51, run.number_of_channels());
     assert_eq!(4, run.number_of_laps());
+    assert_eq!(100, run.frequency());
+
+    let sec_path = "./testdata/WT-20_E05-ARA_Q2_AU-RS3-R5-S-S_016_a_1139.xrk";
+    assert_ne!(run, Run::new(sec_path).unwrap());
   }
 }

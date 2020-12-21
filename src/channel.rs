@@ -112,7 +112,7 @@ impl Channel {
 #[cfg(test)]
 mod tests {
   use super::{super::XdrkFile, *};
-  use pretty_assertions::assert_eq;
+  use pretty_assertions::{assert_eq, assert_ne};
   use std::path::Path;
 
 
@@ -133,7 +133,10 @@ mod tests {
     assert_eq!(0.0, channel.data()[0]);
 
     let raw_channel = xdrk_file.raw_channel(15, Some(1)).unwrap();
-    let channel = Channel::from_raw_channel(raw_channel, 133.749);
+    let other_channel = Channel::from_raw_channel(raw_channel, 133.749);
+    assert_ne!(channel, other_channel);
+
+    let channel = other_channel;
     assert_eq!("fEngRpm", channel.name());
     assert_eq!("rpm", channel.unit());
     assert_eq!(100, channel.frequency());

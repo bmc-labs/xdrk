@@ -115,7 +115,7 @@ impl IntoIterator for RawChannelData {
 #[cfg(test)]
 mod tests {
   use super::{super::XdrkFile, *};
-  use pretty_assertions::assert_eq;
+  use pretty_assertions::{assert_eq, assert_ne};
   use std::path::Path;
 
 
@@ -138,20 +138,22 @@ mod tests {
     assert_eq!(false, raw_channel.is_empty());
     assert_eq!(size, raw_channel.len());
 
-    let raw_channel = RawChannel::new("warbl".to_string(),
-                                      "garbl".to_string(),
+    let new_channel = RawChannel::new("foo".to_string(),
+                                      "bar".to_string(),
                                       raw_channel_data.clone());
-    assert_eq!("warbl", raw_channel.name());
-    assert_eq!("garbl", raw_channel.unit());
+    assert_ne!(raw_channel, new_channel);
+
+    let raw_channel = new_channel;
+    assert_eq!("foo", raw_channel.name());
+    assert_eq!("bar", raw_channel.unit());
     assert_eq!(0, raw_channel.frequency());
     assert_eq!(false, raw_channel.is_empty());
     assert_eq!(size, raw_channel.len());
 
     // tests with context
-    let raw_channel =
-      XdrkFile::load(Path::new(XRK_PATH)).unwrap()
-                                         .raw_channel(2, None)
-                                         .unwrap();
+    let raw_channel = XdrkFile::load(Path::new(XRK_PATH)).unwrap()
+                                                         .raw_channel(2, None)
+                                                         .unwrap();
     assert_eq!("pManifoldScrut", raw_channel.name());
     assert_eq!("bar", raw_channel.unit());
     assert_eq!(100, raw_channel.frequency());
@@ -214,13 +216,16 @@ mod tests {
     assert_eq!(42, channel_data.timestamps().len());
     assert_eq!(42, channel_data.samples().len());
 
+    let (timestamps, samples) = RawChannelData::allocate(1337);
+    let other_data = RawChannelData::from_tsc(timestamps, samples, 1337);
+    assert_ne!(channel_data, other_data);
+
     // tests with context from test data
-    let channel_data =
-      XdrkFile::load(Path::new(XRK_PATH)).unwrap()
-                                         .raw_channel(2, None)
-                                         .unwrap()
-                                         .data()
-                                         .clone();
+    let channel_data = XdrkFile::load(Path::new(XRK_PATH)).unwrap()
+                                                          .raw_channel(2, None)
+                                                          .unwrap()
+                                                          .data()
+                                                          .clone();
     assert_eq!(false, channel_data.is_empty());
     assert_eq!(57980, channel_data.timestamps().len());
     assert_eq!(57980, channel_data.samples().len());

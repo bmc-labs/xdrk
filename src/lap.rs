@@ -80,7 +80,7 @@ impl LapInfo {
 #[cfg(test)]
 mod tests {
   use super::{super::XdrkFile, *};
-  use pretty_assertions::assert_eq;
+  use pretty_assertions::{assert_eq, assert_ne};
   use std::path::Path;
 
 
@@ -156,8 +156,8 @@ mod tests {
       assert_eq!((lap.time() * channel.frequency() as f64).ceil() as usize,
                  channel.len());
     }
-
     assert_eq!(100, lap.frequency());
+    assert_ne!(lap, xdrk_file.lap(2).unwrap());
   }
 
   #[test]
