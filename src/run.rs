@@ -47,12 +47,12 @@ impl Run {
     self.laps.len()
   }
 
-  pub fn frequency(&self) -> f64 {
+  pub fn max_frequency(&self) -> f64 {
     if self.laps.is_empty() {
       return 0.0;
     }
-    let frequency = self.laps[0].frequency();
-    assert!(self.laps.iter().all(|lap| frequency == lap.frequency()));
+    let frequency = self.laps[0].max_frequency();
+    assert!(self.laps.iter().all(|lap| frequency == lap.max_frequency()));
     frequency
   }
 
@@ -144,7 +144,7 @@ mod tests {
 
     assert_eq!(51, run.number_of_channels());
     assert_eq!(4, run.number_of_laps());
-    assert_eq!(100.0, run.frequency());
+    assert_eq!(100.0, run.max_frequency());
 
     let sec_path = "./testdata/WT-20_E05-ARA_Q2_AU-RS3-R5-S-S_016_a_1139.xrk";
     assert_ne!(run, Run::new(sec_path).unwrap());

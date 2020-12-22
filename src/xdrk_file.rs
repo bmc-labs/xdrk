@@ -6,10 +6,10 @@
 
 use super::{service as srv,
             xdrk_bindings as aim,
+            Channel,
+            ChannelData,
             Lap,
-            LapInfo,
-            RawChannel,
-            RawChannelData};
+            LapInfo};
 use anyhow::{anyhow, bail, ensure, Result};
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use getset::{CopyGetters, Getters};
@@ -197,11 +197,11 @@ impl XdrkFile {
   /// `Lap` objects contain a `LapInfo` object and a `Vec<Channel>` containing
   /// all data recorded in the lap.
   pub fn lap(&self, lap_idx: usize) -> Result<Lap> {
-    let mut raw_channels = Vec::with_capacity(self.number_of_channels()?);
+    let mut channels = Vec::with_capacity(self.number_of_channels()?);
     for channel_idx in 0..self.number_of_channels()? {
-      raw_channels.push(self.raw_channel(channel_idx, Some(lap_idx))?);
+      channels.push(self.channel(channel_idx, Some(lap_idx))?);
     }
-    Ok(Lap::from_raw_channels(self.lap_info(lap_idx)?, raw_channels))
+    Ok(Lap::new(self.lap_info(lap_idx)?, channels))
   }
 
   /// Request all channels for all laps contained in this `XdrkFile`. Fails if
@@ -277,26 +277,26 @@ impl XdrkFile {
     })
   }
 
-  /// Request a `RawChannel` object by name and lap index. Fails if no channel
+  /// Request a `Channel` object by name and lap index. Fails if no channel
   /// with that name exists, if no lap with that index exists or the library
   /// call fails for any reason. Pass `None` for lap to get the raw channel
   /// with data from all laps.
-  pub fn raw_channel(&self,
-                     channel_idx: usize,
-                     lap_idx: Option<usize>)
-                     -> Result<RawChannel>
+  pub fn channel(&self,
+                 channel_idx: usize,
+                 lap_idx: Option<usize>)
+                 -> Result<Channel>
   {
-    Ok(RawChannel::new(self.channel_name(channel_idx)?,
-                       self.channel_unit(channel_idx)?,
-                       self.raw_channel_data(channel_idx, lap_idx)?))
+    Ok(Channel::new(self.channel_name(channel_idx)?,
+                    self.channel_unit(channel_idx)?,
+                    self.channel_data(channel_idx, lap_idx)?))
   }
 
   /// For channel with name `channel_name`, collect the measurement samples in
-  /// a `RawChannelData` object. Data is unsynchronized. GPS data included.
-  pub fn raw_channel_data(&self,
-                          channel_idx: usize,
-                          lap_idx: Option<usize>)
-                          -> Result<RawChannelData>
+  /// a `ChannelData` object. Data is unsynchronized. GPS data included.
+  pub fn channel_data(&self,
+                      channel_idx: usize,
+                      lap_idx: Option<usize>)
+                      -> Result<ChannelData>
   {
     if let Some(lap_idx) = lap_idx {
       if channel_idx < self.channels_count()? {
@@ -349,16 +349,16 @@ impl XdrkFile {
   /// For channel with index `channel_idx`, request the samples contained in
   /// this `XdrkFile`.
   ///
-  /// The data will be returned in the form of a `RawChannelData` object, which
+  /// The data will be returned in the form of a `ChannelData` object, which
   /// contains the data as a set of timestamps (the `timestamps()` getter
   /// returns a `&Vec<f64>`) and a corresponding set of samples (the
   /// `samples()` getter returns another `&Vec<f64>`).
-  pub fn channel_samples(&self, channel_idx: usize) -> Result<RawChannelData> {
+  pub fn channel_samples(&self, channel_idx: usize) -> Result<ChannelData> {
     ensure!(channel_idx < self.channels_count()?,
             "channel_idx out of range");
 
     let count = self.channel_samples_count(channel_idx)?;
-    let (mut timestamps, mut samples) = RawChannelData::allocate(count);
+    let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let read = unsafe {
       aim::get_channel_samples(self.idx as i32,
                                channel_idx as i32,
@@ -368,7 +368,7 @@ impl XdrkFile {
     };
     ensure!(read == count as i32, "error reading channel samples");
 
-    Ok(RawChannelData::from_tsc(timestamps, samples, count))
+    Ok(ChannelData::from_tsc(timestamps, samples, count))
   }
 
   /// For lap with index `lap_idx` and channel with index `channel_idx`,
@@ -397,21 +397,21 @@ impl XdrkFile {
   /// For lap with index `lap_idx` and channel with index `channel_idx`,
   /// request the samples contained in this `XdrkFile`.
   ///
-  /// The data will be returned in the form of a `RawChannelData` object, which
+  /// The data will be returned in the form of a `ChannelData` object, which
   /// contains the data as a set of timestamps (the `timestamps()` getter
   /// returns a `&Vec<f64>`) and a corresponding set of samples (the
   /// `samples()` getter returns another `&Vec<f64>`).
   pub fn lap_channel_samples(&self,
                              lap_idx: usize,
                              channel_idx: usize)
-                             -> Result<RawChannelData>
+                             -> Result<ChannelData>
   {
     ensure!(lap_idx < self.number_of_laps()?, "lap_idx out of range");
     ensure!(channel_idx < self.channels_count()?,
             "channel_idx out of range");
 
     let count = self.lap_channel_samples_count(lap_idx, channel_idx)?;
-    let (mut timestamps, mut samples) = RawChannelData::allocate(count);
+    let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let read = unsafe {
       aim::get_lap_channel_samples(self.idx as i32,
                                    lap_idx as i32,
@@ -422,7 +422,7 @@ impl XdrkFile {
     };
     ensure!(read == count as i32, "error reading lap channel samples");
 
-    Ok(RawChannelData::from_tsc(timestamps, samples, count))
+    Ok(ChannelData::from_tsc(timestamps, samples, count))
   }
 
   // GPS INFORMATION FUNCTIONS --------------------------------------------- //
@@ -485,19 +485,19 @@ impl XdrkFile {
   /// For GPS channel with index `channel_idx`, request the samples contained
   /// in this `XdrkFile`.
   ///
-  /// The data will be returned in the form of a `RawChannelData` object, which
+  /// The data will be returned in the form of a `ChannelData` object, which
   /// contains the data as a set of timestamps (the `timestamps()` getter
   /// returns a `&Vec<f64>`) and a corresponding set of samples (the
   /// `samples()` getter returns another `&Vec<f64>`).
   pub fn gps_channel_samples(&self,
                              channel_idx: usize)
-                             -> Result<RawChannelData>
+                             -> Result<ChannelData>
   {
     ensure!(channel_idx < self.gps_channels_count()?,
             "channel_idx out of range");
 
     let count = self.gps_channel_samples_count(channel_idx)?;
-    let (mut timestamps, mut samples) = RawChannelData::allocate(count);
+    let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let read = unsafe {
       aim::get_GPS_channel_samples(self.idx as i32,
                                    channel_idx as i32,
@@ -507,7 +507,7 @@ impl XdrkFile {
     };
     ensure!(read == count as i32, "error reading GPS channel samples");
 
-    Ok(RawChannelData::from_tsc(timestamps, samples, count))
+    Ok(ChannelData::from_tsc(timestamps, samples, count))
   }
 
   /// For lap with index `lap_idx` and GPS channel with index `channel_idx`,
@@ -536,21 +536,21 @@ impl XdrkFile {
   /// For lap with index `lap_idx` and GPS channel with index `channel_idx`,
   /// request the samples contained in this `XdrkFile`.
   ///
-  /// The data will be returned in the form of a `RawChannelData` object, which
+  /// The data will be returned in the form of a `ChannelData` object, which
   /// contains the data as a set of timestamps (the `timestamps()` getter
   /// returns a `&Vec<f64>`) and a corresponding set of samples (the
   /// `samples()` getter returns another `&Vec<f64>`).
   pub fn lap_gps_channel_samples(&self,
                                  lap_idx: usize,
                                  channel_idx: usize)
-                                 -> Result<RawChannelData>
+                                 -> Result<ChannelData>
   {
     ensure!(lap_idx < self.number_of_laps()?, "lap_idx out of range");
     ensure!(channel_idx < self.gps_channels_count()?,
             "channel_idx out of range");
 
     let count = self.lap_gps_channel_samples_count(lap_idx, channel_idx)?;
-    let (mut timestamps, mut samples) = RawChannelData::allocate(count);
+    let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let read = unsafe {
       aim::get_lap_GPS_channel_samples(self.idx as i32,
                                        lap_idx as i32,
@@ -561,7 +561,7 @@ impl XdrkFile {
     };
     ensure!(read == count as i32, "error reading GPS channel samples");
 
-    Ok(RawChannelData::from_tsc(timestamps, samples, count))
+    Ok(ChannelData::from_tsc(timestamps, samples, count))
   }
 
   // ----------------------------------------------------------------------- //
@@ -635,7 +635,7 @@ impl XdrkFile {
   /// For GPS raw channel with index `channel_idx`, request the samples
   /// contained in this `XdrkFile`.
   ///
-  /// The data will be returned in the form of a `RawChannelData` object, which
+  /// The data will be returned in the form of a `ChannelData` object, which
   /// contains the data as a set of timestamps (the `timestamps()` getter
   /// returns a `&Vec<f64>`) and a corresponding set of samples (the
   /// `samples()` getter returns another `&Vec<f64>`).
@@ -644,13 +644,13 @@ impl XdrkFile {
   /// TO THE UNDERLYING LIBRARY FUNCTION.
   pub fn gps_raw_channel_samples(&self,
                                  channel_idx: usize)
-                                 -> Result<RawChannelData>
+                                 -> Result<ChannelData>
   {
     ensure!(channel_idx < self.gps_raw_channels_count()?,
             "channel_idx out of range");
 
     let count = self.gps_raw_channel_samples_count(channel_idx)?;
-    let (mut timestamps, mut samples) = RawChannelData::allocate(count);
+    let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let read = unsafe {
       aim::get_GPS_raw_channel_samples(self.idx as i32,
                                        channel_idx as i32,
@@ -660,7 +660,7 @@ impl XdrkFile {
     };
     ensure!(read == count as i32, "error reading GPS channel samples");
 
-    Ok(RawChannelData::from_tsc(timestamps, samples, count))
+    Ok(ChannelData::from_tsc(timestamps, samples, count))
   }
 
   /// For lap with index `lap_idx` and GPS raw channel with index
@@ -693,7 +693,7 @@ impl XdrkFile {
   /// For lap with index `lap_idx` and GPS raw channel with index
   /// `channel_idx`, request the samples contained in this `XdrkFile`.
   ///
-  /// The data will be returned in the form of a `RawChannelData` object, which
+  /// The data will be returned in the form of a `ChannelData` object, which
   /// contains the data as a set of timestamps (the `timestamps()` getter
   /// returns a `&Vec<f64>`) and a corresponding set of samples (the
   /// `samples()` getter returns another `&Vec<f64>`).
@@ -703,14 +703,14 @@ impl XdrkFile {
   pub fn lap_gps_raw_channel_samples(&self,
                                      lap_idx: usize,
                                      channel_idx: usize)
-                                     -> Result<RawChannelData>
+                                     -> Result<ChannelData>
   {
     ensure!(lap_idx < self.number_of_laps()?, "lap_idx out of range");
     ensure!(channel_idx < self.gps_raw_channels_count()?,
             "channel_idx out of range");
 
     let count = self.lap_gps_raw_channel_samples_count(lap_idx, channel_idx)?;
-    let (mut timestamps, mut samples) = RawChannelData::allocate(count);
+    let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let read = unsafe {
       aim::get_lap_GPS_raw_channel_samples(self.idx as i32,
                                            lap_idx as i32,
@@ -721,7 +721,7 @@ impl XdrkFile {
     };
     ensure!(read == count as i32, "error reading GPS channel samples");
 
-    Ok(RawChannelData::from_tsc(timestamps, samples, count))
+    Ok(ChannelData::from_tsc(timestamps, samples, count))
   }
   // ----------------------------------------------------------------------- //
 }

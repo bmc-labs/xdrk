@@ -4,7 +4,7 @@
 //   Jonas Reitemeyer <jonas@bmc-labs.com>
 //   Florian Eich <florian@bmc-labs.com>
 
-use super::{Channel, RawChannel};
+use super::Channel;
 use getset::{CopyGetters, Getters};
 
 
@@ -29,19 +29,6 @@ impl Lap {
            channels }
   }
 
-  pub fn from_raw_channels(info: LapInfo,
-                           raw_channels: Vec<RawChannel>)
-                           -> Self
-  {
-    let channels =
-      raw_channels.into_iter()
-                  .map(|c| {
-                    Channel::from_raw_channel(c, info.start(), info.time())
-                  })
-                  .collect();
-    Self::new(info, channels)
-  }
-
   pub fn channel_names(&self) -> Vec<String> {
     self.channels
         .iter()
@@ -53,7 +40,7 @@ impl Lap {
     self.channels.iter().find(|c| c.name() == name)
   }
 
-  pub fn frequency(&self) -> f64 {
+  pub fn max_frequency(&self) -> f64 {
     if self.channels.is_empty() {
       return 0.0;
     }
@@ -72,19 +59,35 @@ impl Lap {
     };
 
     let stepsize = std::cmp::max(1, v_gps.frequency() as usize / 10);
-    let t = 1.0 / stepsize as f32;
-    let v_gps = v_gps.data();
+    let (t, v) = (v_gps.data().timestamps(), v_gps.data().samples());
 
     let mut dist = 0.0;
-    for i in (1..v_gps.len()).step_by(stepsize) {
-      dist += (v_gps[i - 1] * t + 0.5 * (v_gps[i] - v_gps[i - 1]) * t) as f64;
+    for i in (stepsize..v_gps.len()).step_by(stepsize) {
+      // the following is the simple distance at constant acceleration formula:
+      //
+      //   x(t) = x_0 + v_0 * t + a_c * t^2
+      //
+      // this can be reformulated as a series:
+      //
+      //   x_i = x_(i - 1) + v_(i - 1) * Δt + 0.5 * a_i * (Δt)^2
+      //   where i = 1, 2, ...
+      //
+      // with a_i = (v_i - v_(i - 1)) / Δt, we get
+      //
+      //   x_i = x_(i - 1) + v_(i - 1) * Δt + 0.5 * (v_i - v_(i - 1)) * Δt
+      //   where i = 1, 2, ...
+      //
+      // and therefore
+      //
+      //   x_i = x_(i - 1) + 0.5 * (v_i + v_(i - 1)) * Δt
+      //   where i = 1, 2, ...
+      //
+      // which we implement using the += operator and an accumulator like so:
+      //
+      dist += 0.5 * (v[i] + v[i - stepsize]) * (t[i] - t[i - stepsize]);
     }
     // round to 3 digits
     ((dist * 1000.0).round() / 1000.0) as f64
-  }
-
-  pub fn yield_channels(self) -> Vec<Channel> {
-    self.channels
   }
 }
 
@@ -185,12 +188,8 @@ mod tests {
     assert_eq!("pManifoldScrut", p_manifold_scrut.name());
     assert_eq!(100.0, p_manifold_scrut.frequency());
 
-    for channel in lap.channels() {
-      assert_eq!((lap.time() * channel.frequency() as f64).ceil() as usize,
-                 channel.len());
-    }
-    assert_eq!(100.0, lap.frequency());
-    assert_eq!(5331.617, lap.distance());
+    assert_eq!(100.0, lap.max_frequency());
+    assert_eq!(5326.123, lap.distance());
     assert_ne!(lap, xdrk_file.lap(2).unwrap());
   }
 

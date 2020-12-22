@@ -25,14 +25,12 @@
 
 mod channel;
 mod lap;
-mod raw_channel;
 mod run;
 mod service;
 mod xdrk_bindings;
 mod xdrk_file;
 
-pub use channel::Channel;
+pub use channel::{Channel, ChannelData};
 pub use lap::{Lap, LapInfo};
-pub use raw_channel::{RawChannel, RawChannelData};
 pub use run::Run;
 pub use xdrk_file::XdrkFile;
