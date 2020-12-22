@@ -26,12 +26,12 @@ impl RawChannel {
   }
 
   /// Calculates and returns the recording frequency of the data in Hz.
-  pub fn frequency(&self) -> usize {
+  pub fn frequency(&self) -> f64 {
     if self.is_empty()
        || self.len() < 3
        || self.data.timestamps().iter().sum::<f64>() < 0.1
     {
-      return 0;
+      return 0.0;
     }
 
     // we multiply by 500 and divide back through 1000 for normalization on
@@ -45,7 +45,7 @@ impl RawChannel {
                  (raw_frequency - frequency as i32).abs()
                })
                .unwrap_or(&0_usize)
-               .clone()
+               .clone() as f64
   }
 
   pub fn len(&self) -> usize {
@@ -134,7 +134,7 @@ mod tests {
                                       raw_channel_data.clone());
     assert_eq!("warbl", raw_channel.name());
     assert_eq!("garbl", raw_channel.unit());
-    assert_eq!(0, raw_channel.frequency());
+    assert_eq!(0.0, raw_channel.frequency());
     assert_eq!(false, raw_channel.is_empty());
     assert_eq!(size, raw_channel.len());
 
@@ -146,7 +146,7 @@ mod tests {
     let raw_channel = new_channel;
     assert_eq!("foo", raw_channel.name());
     assert_eq!("bar", raw_channel.unit());
-    assert_eq!(0, raw_channel.frequency());
+    assert_eq!(0.0, raw_channel.frequency());
     assert_eq!(false, raw_channel.is_empty());
     assert_eq!(size, raw_channel.len());
 
@@ -156,7 +156,7 @@ mod tests {
                                                          .unwrap();
     assert_eq!("pManifoldScrut", raw_channel.name());
     assert_eq!("bar", raw_channel.unit());
-    assert_eq!(100, raw_channel.frequency());
+    assert_eq!(100.0, raw_channel.frequency());
     assert_eq!(false, raw_channel.is_empty());
     assert_eq!(57980, raw_channel.len());
   }

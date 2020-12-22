@@ -6,6 +6,7 @@
 
 use super::RawChannel;
 use getset::{CopyGetters, Getters};
+use serde::{Deserialize, Serialize};
 
 
 /// Holds synchronized channel data.
@@ -55,14 +56,20 @@ use getset::{CopyGetters, Getters};
 ///
 /// This has turned out to perform well as AiM does well keeping the
 /// measurement equidistant even though there are missing samples.
-#[derive(Clone, Debug, PartialEq, CopyGetters, Getters)]
+#[derive(Clone,
+           Debug,
+           PartialEq,
+           CopyGetters,
+           Getters,
+           Serialize,
+           Deserialize)]
 pub struct Channel {
   #[getset(get = "pub")]
   name:      String,
   #[getset(get = "pub")]
   unit:      String,
   #[getset(get_copy = "pub")]
-  frequency: usize,
+  frequency: f64,
   #[getset(get = "pub")]
   data:      Vec<f32>,
 }
@@ -127,7 +134,7 @@ mod tests {
     let channel = Channel::from_raw_channel(raw_channel, 0.0, 580.205);
     assert_eq!("pManifoldScrut", channel.name());
     assert_eq!("bar", channel.unit());
-    assert_eq!(100, channel.frequency());
+    assert_eq!(100.0, channel.frequency());
     assert_eq!(58021, channel.len());
     assert_eq!(false, channel.is_empty());
     assert_eq!(0.0, channel.data()[0]);
@@ -139,7 +146,7 @@ mod tests {
     let channel = other_channel;
     assert_eq!("fEngRpm", channel.name());
     assert_eq!("rpm", channel.unit());
-    assert_eq!(100, channel.frequency());
+    assert_eq!(100.0, channel.frequency());
     assert_eq!(13375, channel.len());
     assert_eq!(false, channel.is_empty());
     assert_eq!(0.0, channel.data()[0]);

@@ -53,33 +53,38 @@ impl Lap {
     self.channels.iter().find(|c| c.name() == name)
   }
 
-  pub fn frequency(&self) -> usize {
+  pub fn frequency(&self) -> f64 {
     if self.channels.is_empty() {
-      return 0;
+      return 0.0;
     }
     self.channels
         .iter()
-        .max_by_key(|channel| channel.frequency())
+        .max_by_key(|channel| channel.frequency() as usize)
         .unwrap()
         .frequency()
   }
 
-  pub fn distance(&self) -> f32 {
+  pub fn distance(&self) -> f64 {
     let v_gps = if let Some(v_gps) = self.channel("GPS Speed") {
       v_gps
     } else {
       return 0.0;
     };
 
-    let stepsize = std::cmp::max(1, v_gps.frequency() / 10);
+    let stepsize = std::cmp::max(1, v_gps.frequency() as usize / 10);
     let t = 1.0 / stepsize as f32;
     let v_gps = v_gps.data();
 
     let mut dist = 0.0;
     for i in (1..v_gps.len()).step_by(stepsize) {
-      dist += v_gps[i - 1] * t + 0.5 * (v_gps[i] - v_gps[i - 1]) * t;
+      dist += (v_gps[i - 1] * t + 0.5 * (v_gps[i] - v_gps[i - 1]) * t) as f64;
     }
-    dist
+    // round to 3 digits
+    ((dist * 1000.0).round() / 1000.0) as f64
+  }
+
+  pub fn yield_channels(self) -> Vec<Channel> {
+    self.channels
   }
 }
 
@@ -178,14 +183,14 @@ mod tests {
 
     let p_manifold_scrut = lap.channel("pManifoldScrut").unwrap();
     assert_eq!("pManifoldScrut", p_manifold_scrut.name());
-    assert_eq!(100, p_manifold_scrut.frequency());
+    assert_eq!(100.0, p_manifold_scrut.frequency());
 
     for channel in lap.channels() {
       assert_eq!((lap.time() * channel.frequency() as f64).ceil() as usize,
                  channel.len());
     }
-    assert_eq!(100, lap.frequency());
-    assert_eq!(5331.6157, lap.distance());
+    assert_eq!(100.0, lap.frequency());
+    assert_eq!(5331.617, lap.distance());
     assert_ne!(lap, xdrk_file.lap(2).unwrap());
   }
 
