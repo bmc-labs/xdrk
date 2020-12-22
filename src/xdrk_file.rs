@@ -199,9 +199,6 @@ impl XdrkFile {
   pub fn lap(&self, lap_idx: usize) -> Result<Lap> {
     let mut raw_channels = Vec::with_capacity(self.number_of_channels()?);
     for channel_idx in 0..self.number_of_channels()? {
-      println!("loading channel with index {} - '{}'",
-               channel_idx,
-               self.channel_name(channel_idx)?);
       raw_channels.push(self.raw_channel(channel_idx, Some(lap_idx))?);
     }
     Ok(Lap::from_raw_channels(self.lap_info(lap_idx)?, raw_channels))

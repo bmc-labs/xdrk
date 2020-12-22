@@ -69,7 +69,7 @@ pub struct RawChannelData {
 impl RawChannelData {
   /// Helper function which allocates memory buffers in the required format.
   pub fn allocate(count: usize) -> (Vec<f64>, Vec<f64>) {
-    (Vec::with_capacity(count), Vec::with_capacity(count))
+    (vec![0.0; count], vec![0.0; count])
   }
 
   /// Creates a new `RawChannelData` object from buffers `t` (timestamps), `s`

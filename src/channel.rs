@@ -68,7 +68,7 @@ pub struct Channel {
 }
 
 impl Channel {
-  pub fn from_raw_channel(raw: RawChannel, time: f64) -> Self {
+  pub fn from_raw_channel(raw: RawChannel, start: f64, time: f64) -> Self {
     let name = raw.name().to_owned();
     let unit = raw.unit().to_owned();
     let frequency = raw.frequency();
@@ -78,18 +78,18 @@ impl Channel {
     let advance = 1.0 / frequency as f64;
     let threshold = 0.5 * advance;
 
-    let (mut timestamp, mut sample) = (0.0f64, 0.0f64);
+    let (mut timestamp, mut sample) = (start, 0.0f64);
     let mut raw_iter = raw.data().to_owned().into_iter();
     let mut raw_data = raw_iter.next();
 
-    while timestamp < time {
+    while timestamp < (start + time) {
       if raw_data.is_some()
-         && (raw_data.unwrap().0 - timestamp).abs() < threshold
+         && (raw_data.unwrap().0 - timestamp).abs() <= threshold
       {
         sample = raw_data.unwrap().1;
         raw_data = raw_iter.next();
       }
-      timestamp = timestamp + advance;
+      timestamp += advance;
       data.push(sample as f32);
     }
 
@@ -124,7 +124,7 @@ mod tests {
     let xdrk_file = XdrkFile::load(Path::new(XRK_PATH)).unwrap();
 
     let raw_channel = xdrk_file.raw_channel(2, None).unwrap();
-    let channel = Channel::from_raw_channel(raw_channel, 580.205);
+    let channel = Channel::from_raw_channel(raw_channel, 0.0, 580.205);
     assert_eq!("pManifoldScrut", channel.name());
     assert_eq!("bar", channel.unit());
     assert_eq!(100, channel.frequency());
@@ -133,7 +133,7 @@ mod tests {
     assert_eq!(0.0, channel.data()[0]);
 
     let raw_channel = xdrk_file.raw_channel(15, Some(1)).unwrap();
-    let other_channel = Channel::from_raw_channel(raw_channel, 133.749);
+    let other_channel = Channel::from_raw_channel(raw_channel, 0.0, 133.749);
     assert_ne!(channel, other_channel);
 
     let channel = other_channel;

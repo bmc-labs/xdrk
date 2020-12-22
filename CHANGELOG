@@ -7,11 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - implement interface to GPS, now same as other channels
+- calculation of lap distance from GPS
 
 ### Changed
 - type `RunData` has been renamed to `Run`
 - simplified API for `XdrkFile`
 - slight improvements and simplifications on API of `Channel` and `RawChannel`
+
+### Fixed
+- data vectors in `RawChannelData` previously weren't zeroed; now they are
 
 ## [1.2.0] - 2020-12-15
 ### Added
