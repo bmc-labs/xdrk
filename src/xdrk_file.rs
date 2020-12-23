@@ -197,8 +197,9 @@ impl XdrkFile {
   /// `Lap` objects contain a `LapInfo` object and a `Vec<Channel>` containing
   /// all data recorded in the lap.
   pub fn lap(&self, lap_idx: usize) -> Result<Lap> {
-    let mut channels = Vec::with_capacity(self.number_of_channels()?);
-    for channel_idx in 0..self.number_of_channels()? {
+    let len = self.number_of_channels()?;
+    let mut channels = Vec::with_capacity(len);
+    for channel_idx in 0..len {
       channels.push(self.channel(channel_idx, Some(lap_idx))?);
     }
     Ok(Lap::new(self.lap_info(lap_idx)?, channels))
@@ -208,8 +209,9 @@ impl XdrkFile {
   /// the library call fails for any reason, either on finding all laps or on
   /// requesting `Lap`s.
   pub fn all_laps(&self) -> Result<Vec<Lap>> {
-    let mut laps = Vec::with_capacity(self.number_of_laps()?);
-    for lap_idx in 0..self.number_of_laps()? {
+    let len = self.number_of_laps()?;
+    let mut laps = Vec::with_capacity(len);
+    for lap_idx in 0..len {
       laps.push(self.lap(lap_idx)?);
     }
     Ok(laps)
