@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - moved `Channel` and all functionality to optimus, `xdrk` now only provides
     raw channels via the API
 - the `Raw` prefix has thus been dropped (except for AiM's GPS stuff)
+- moved distance calculation from `Lap` to optimus, as planned
 
 ### Fixed
 - data vectors in `RawChannelData` previously weren't zeroed; now they are

@@ -12,7 +12,7 @@ const FREQUENCIES: [usize; 10] = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
 
 
 /// Holds raw, unsynchronized data of a channel and additional metadata.
-#[derive(Clone, Debug, PartialEq, CopyGetters, Getters)]
+#[derive(Clone, Debug, Default, PartialEq, CopyGetters, Getters)]
 #[getset(get = "pub")]
 pub struct Channel {
   name: String,
@@ -59,7 +59,7 @@ impl Channel {
 
 
 /// Holds data of a channel retrieved from a file.
-#[derive(Clone, Debug, PartialEq, Getters, MutGetters)]
+#[derive(Clone, Debug, Default, PartialEq, Getters, MutGetters)]
 #[getset(get = "pub", get_mut = "pub")]
 pub struct ChannelData {
   timestamps: Vec<f64>,

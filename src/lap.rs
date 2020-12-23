@@ -50,45 +50,6 @@ impl Lap {
         .unwrap()
         .frequency()
   }
-
-  pub fn distance(&self) -> f64 {
-    let v_gps = if let Some(v_gps) = self.channel("GPS Speed") {
-      v_gps
-    } else {
-      return 0.0;
-    };
-
-    let stepsize = std::cmp::max(1, v_gps.frequency() as usize / 10);
-    let (t, v) = (v_gps.data().timestamps(), v_gps.data().samples());
-
-    let mut dist = 0.0;
-    for i in (stepsize..v_gps.len()).step_by(stepsize) {
-      // the following is the simple distance at constant acceleration formula:
-      //
-      //   x(t) = x_0 + v_0 * t + a_c * t^2
-      //
-      // this can be reformulated as a series:
-      //
-      //   x_i = x_(i - 1) + v_(i - 1) * Δt + 0.5 * a_i * (Δt)^2
-      //   where i = 1, 2, ...
-      //
-      // with a_i = (v_i - v_(i - 1)) / Δt, we get
-      //
-      //   x_i = x_(i - 1) + v_(i - 1) * Δt + 0.5 * (v_i - v_(i - 1)) * Δt
-      //   where i = 1, 2, ...
-      //
-      // and therefore
-      //
-      //   x_i = x_(i - 1) + 0.5 * (v_i + v_(i - 1)) * Δt
-      //   where i = 1, 2, ...
-      //
-      // which we implement using the += operator and an accumulator like so:
-      //
-      dist += 0.5 * (v[i] + v[i - stepsize]) * (t[i] - t[i - stepsize]);
-    }
-    // round to 3 digits
-    ((dist * 1000.0).round() / 1000.0) as f64
-  }
 }
 
 /// Stores the start time within the recording and the time of a lap.
@@ -189,7 +150,6 @@ mod tests {
     assert_eq!(100.0, p_manifold_scrut.frequency());
 
     assert_eq!(100.0, lap.max_frequency());
-    assert_eq!(5326.123, lap.distance());
     assert_ne!(lap, xdrk_file.lap(2).unwrap());
   }
 
