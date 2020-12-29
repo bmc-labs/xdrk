@@ -26,8 +26,8 @@ pub struct Run {
 }
 
 impl Run {
-  pub fn new(path: &str) -> Result<Self> {
-    let xdrk = XdrkFile::load(Path::new(path))?;
+  pub fn from_file(file_path: &str) -> Result<Self> {
+    let xdrk = XdrkFile::load(Path::new(file_path))?;
 
     Ok(Self { championship:  xdrk.championship()?,
               track:         xdrk.track()?,
@@ -73,7 +73,7 @@ mod tests {
 
   #[test]
   fn rundata_test() {
-    let run = Run::new(XRK_PATH).unwrap();
+    let run = Run::from_file(XRK_PATH).unwrap();
 
     assert_eq!("WT-20", run.championship());
     assert_eq!("ARA_1-0-0", run.track());
@@ -147,6 +147,6 @@ mod tests {
     assert_eq!(100.0, run.max_frequency());
 
     let sec_path = "./testdata/WT-20_E05-ARA_Q2_AU-RS3-R5-S-S_016_a_1139.xrk";
-    assert_ne!(run, Run::new(sec_path).unwrap());
+    assert_ne!(run, Run::from_file(sec_path).unwrap());
   }
 }

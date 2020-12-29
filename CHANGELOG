@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     raw channels via the API
 - the `Raw` prefix has thus been dropped (except for AiM's GPS stuff)
 - moved distance calculation from `Lap` to optimus, as planned
+- `Run` is created by calling `Run::from_file` now, as opposed to before:
+    `Run::new`, which by convention tends to return a virgin object
 
 ### Fixed
 - data vectors in `RawChannelData` previously weren't zeroed; now they are
