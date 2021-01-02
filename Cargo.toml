@@ -8,7 +8,7 @@
 name = "xdrk"
 description = "Library to open XRK and DRK files, produced by AiM devices"
 
-version = "2.0.0-rc6"
+version = "2.0.0-rc7"
 authors = [
   "Florian Eich <florian@bmc-labs.com>",
   "Jonas Reitemeyer <jonas@bmc-labs.com"
@@ -26,6 +26,7 @@ pretty_assertions = "0.6"
 anyhow = "1"
 chrono = "0.4"
 getset = "0.1"
+lazy_static = "1.4"
 serde = { version = "1.0", features = ["derive"] }
 
 

@@ -20,24 +20,42 @@ It works on both Linux and Windows 64bit; on Windows, you'll need to use the
 `x86_64-pc-windows-msvc` target which in turn required you to install a few GB
 of MSVC build tools.
 
-Testing is the same, with a minor caveat. Since unfortunately the AiM library
-is not thread safe, you have to run tests using the command
+Testing is the same, but the `Drop` implementation test has to be run
+separately since, well, the AiM library does some on-disk file I/O and that
+can't happen when running tests concurrently:
+
+```sh
+cargo test
+cargo test -- --ignored
+```
+
+If you have a peak into the `coverage.sh` file, which is what the continuous
+integration environment runs, you'll notice that here, we run the tests single
+threaded:
 
 ```sh
 cargo test -- --test-threads=1
+cargo test -- --ignored
 ```
-This also means that potentially the test may run slightly longer than you
-would expect. On our machines, it doesn't interfere with the development
-process so if you are on something vaguely modern, you are not on Windows and
-you're seeing excessive run times there is probably something wrong. On
-Windows, tests run 10x longer since the AiM DLL spends between 10 and 20
-seconds opening any XRK/DRK file, a process which takes nothing close to a
-second on Linux.
+
+This is done because with the flags required by
+[`grcov`](https://github.com/mozilla/grcov), somehow tests are run in separate
+processes (I guess?) or something like that - the result is that it f%cks with
+the globals needed to wrap the AiM library in a thread safe way, and very
+strange errors occur, so we can't run tests in parallel in CI. _**Should you
+find yourself running into issues, I suggest you run the tests single threaded
+just like CI does, and see what happens.**_
+
+On our machines, tests run in a reasonable, sub 60 seconds timeframe. So if you
+are on something vaguely modern, you are not on Windows and you're seeing
+excessive run times there is probably something wrong. On Windows, tests run
+10x longer since the AiM DLL spends between 10 and 20 seconds opening any
+XRK/DRK file, a process which takes nothing close to a second on Linux.
 
 ### Using it
 Best is to declare it as a dependency of your project via git.
 
-### Caveats if you're working on this and get f8**ed by Windows
+### Caveats if you're working on this and get f%cked by Windows
 MSVC won't link against a .dll and then later load it dynamically, but it also
 won't "blindly" link against a shared object and check if everything is dandy
 at runtime. Well, sort of, because the resource it needs to "link" is just a

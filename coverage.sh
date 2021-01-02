@@ -12,7 +12,8 @@ export RUSTDOCFLAGS="-Cpanic=abort"
 
 # build and run tests using these two commands in every component directory
 cargo build
-cargo test --workspace -- --test-threads=1
+cargo test -- --test-threads=1
+cargo test -- --ignored
 
 # use grcov to generate report info
 mkdir -p ./target/coverage

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - implement interface to GPS, now same as other channels
 - calculation of lap distance from GPS
+- THREAD SAFE ALL THE THINGS
 
 ### Changed
 - type `RunData` has been renamed to `Run`
