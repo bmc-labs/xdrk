@@ -201,22 +201,23 @@ extern "C" {
   /// - `0` if the channel contains no datapoints (theoretically impossible)
   /// - on error, a negative value
   pub fn get_channel_samples_count(idxf: c_int, idxc: c_int) -> c_int;
+
   /// Get datapoints in channel
   ///
   /// # Arguments
   /// - `idxf`: the internal file index returned by the `open_file` function
   /// - `idxc`: the channel index
   /// - `ptimes`: a pointer to **a buffer** of `mut f64` where timestamps of
-  /// datapoints are stored
+  ///   datapoints are stored
   /// - `pvalues`: a pointer to **a buffer** of `mut f64` where datapoints are
-  /// stored
+  ///   stored
   /// - `cnt`: the number of datapoints to be read (find using the
-  /// `get_channel_samples_count` function)
+  ///   `get_channel_samples_count` function)
   ///
   /// # Returns
   /// - on success, the number of datapoints in the channel
   /// - `0` if the `cnt` argument does not match the number of datapoints OR if
-  /// the channel contains no datapoints (theoretically impossible)
+  ///   the channel contains no datapoints (theoretically impossible)
   /// - on error, a negative value
   pub fn get_channel_samples(idxf: c_int,
                              idxc: c_int,
@@ -248,16 +249,16 @@ extern "C" {
   /// - `idxl`: the lap index
   /// - `idxc`: the channel index
   /// - `ptimes`: a pointer to **a buffer** of `mut f64` where timestamps of
-  /// datapoints are stored
+  ///   datapoints are stored
   /// - `pvalues`: a pointer to **a buffer** of `mut f64` where datapoints are
-  /// stored
+  ///   stored
   /// - `cnt`: the number of datapoints to be read (find using the
   /// `get_channel_samples_count` function)
   ///
   /// # Returns
   /// - on success, the number of datapoints in the channel
   /// - `0` if the `cnt` argument does not match the number of datapoints OR if
-  /// the channel contains no datapoints (theoretically impossible)
+  ///   the channel contains no datapoints (theoretically impossible)
   /// - on error, a negative value
   pub fn get_lap_channel_samples(idxf: c_int,
                                  idxl: c_int,
@@ -326,16 +327,16 @@ extern "C" {
   /// - `idxf`: the internal file index returned by the `open_file` function
   /// - `idxc`: the channel index
   /// - `ptimes`: a pointer to **a buffer** of `mut f64` where timestamps of
-  /// datapoints are stored
+  ///   datapoints are stored
   /// - `pvalues`: a pointer to **a buffer** of `mut f64` where datapoints are
-  /// stored
+  ///   stored
   /// - `cnt`: the number of datapoints to be read (find using the
-  /// `get_channel_samples_count` function)
+  ///   `get_channel_samples_count` function)
   ///
   /// # Returns
   /// - on success, the number of datapoints in the channel
   /// - `0` if the `cnt` argument does not match the number of datapoints OR if
-  /// the channel contains no datapoints (theoretically impossible)
+  ///   the channel contains no datapoints (theoretically impossible)
   /// - on error, a negative value
   pub fn get_GPS_channel_samples(idxf: c_int,
                                  idxc: c_int,
@@ -367,16 +368,16 @@ extern "C" {
   /// - `idxl`: the lap index
   /// - `idxc`: the channel index
   /// - `ptimes`: a pointer to **a buffer** of `mut f64` where timestamps of
-  /// datapoints are stored
+  ///   datapoints are stored
   /// - `pvalues`: a pointer to **a buffer** of `mut f64` where datapoints are
-  /// stored
+  ///   stored
   /// - `cnt`: the number of datapoints to be read (find using the
-  /// `get_channel_samples_count` function)
+  ///   `get_channel_samples_count` function)
   ///
   /// # Returns
   /// - on success, the number of datapoints in the channel
   /// - `0` if the `cnt` argument does not match the number of datapoints OR if
-  /// the channel contains no datapoints (theoretically impossible)
+  ///   the channel contains no datapoints (theoretically impossible)
   /// - on error, a negative value
   pub fn get_lap_GPS_channel_samples(idxf: c_int,
                                      idxl: c_int,
@@ -437,16 +438,16 @@ extern "C" {
   /// - `idxf`: the internal file index returned by the `open_file` function
   /// - `idxc`: the channel index
   /// - `ptimes`: a pointer to **a buffer** of `mut f64` where timestamps of
-  /// datapoints are stored
+  ///   datapoints are stored
   /// - `pvalues`: a pointer to **a buffer** of `mut f64` where datapoints are
-  /// stored
+  ///   stored
   /// - `cnt`: the number of datapoints to be read (find using the
-  /// `get_channel_samples_count` function)
+  ///   `get_channel_samples_count` function)
   ///
   /// # Returns
   /// - on success, the number of datapoints in the channel
   /// - `0` if the `cnt` argument does not match the number of datapoints OR if
-  /// the channel contains no datapoints (theoretically impossible)
+  ///   the channel contains no datapoints (theoretically impossible)
   /// - on error, a negative value
   pub fn get_GPS_raw_channel_samples(idxf: c_int,
                                      idxc: c_int,
@@ -478,16 +479,16 @@ extern "C" {
   /// - `idxl`: the lap index
   /// - `idxc`: the channel index
   /// - `ptimes`: a pointer to **a buffer** of `mut f64` where timestamps of
-  /// datapoints are stored
+  ///   datapoints are stored
   /// - `pvalues`: a pointer to **a buffer** of `mut f64` where datapoints are
-  /// stored
+  ///   stored
   /// - `cnt`: the number of datapoints to be read (find using the
-  /// `get_channel_samples_count` function)
+  ///   `get_channel_samples_count` function)
   ///
   /// # Returns
   /// - on success, the number of datapoints in the channel
   /// - `0` if the `cnt` argument does not match the number of datapoints OR if
-  /// the channel contains no datapoints (theoretically impossible)
+  ///   the channel contains no datapoints (theoretically impossible)
   /// - on error, a negative value
   pub fn get_lap_GPS_raw_channel_samples(idxf: c_int,
                                          idxl: c_int,
@@ -503,6 +504,6 @@ extern "C" {
 
   /// Returns the compile time of this library as a C string
   pub fn get_library_time() -> *const c_char;
-// ----------------------------------------------------------------------- //
+  // ----------------------------------------------------------------------- //
 
 }
