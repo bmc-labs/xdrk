@@ -8,7 +8,7 @@
 name = "xdrk"
 description = "Library to open XRK and DRK files, produced by AiM devices"
 
-version = "2.0.0-rc7"
+version = "2.0.0-rc8"
 authors = [
   "Florian Eich <florian@bmc-labs.com>",
   "Jonas Reitemeyer <jonas@bmc-labs.com"

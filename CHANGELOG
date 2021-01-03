@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - moved distance calculation from `Lap` to optimus, as planned
 - `Run` is created by calling `Run::from_file` now, as opposed to before:
     `Run::new`, which by convention tends to return a virgin object
+- switch API of `Run::from_file` from taking a `&str` to taking a `&Path`
 
 ### Fixed
 - data vectors in `RawChannelData` previously weren't zeroed; now they are
