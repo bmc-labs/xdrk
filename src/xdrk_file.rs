@@ -84,7 +84,6 @@ impl Drop for XdrkFile {
                   .expect("failed to get XdrkIdxRc object in Drop impl")
                   .decrement_rc();
     }
-    println!("drop - {:#?}", loaded_paths);
   }
 }
 
@@ -93,7 +92,6 @@ impl XdrkFile {
   /// Library compilation date.
   pub fn library_date() -> Result<NaiveDate> {
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("library_date - {:#?}", _guard);
     Ok(NaiveDate::parse_from_str(unsafe {
                                    CStr::from_ptr(aim::get_library_date())
                                  }.to_str()?,
@@ -103,7 +101,6 @@ impl XdrkFile {
   /// Library compilation time.
   pub fn library_time() -> Result<NaiveTime> {
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("library_time - {:#?}", _guard);
     Ok(NaiveTime::parse_from_str(unsafe {
                                    CStr::from_ptr(aim::get_library_time())
                                  }.to_str()?,
@@ -150,7 +147,6 @@ impl XdrkFile {
                   .increment_rc();
     }
 
-    println!("load - {:#?}", loaded_paths);
     Ok(Self { path: path.to_owned(),
               idx:  loaded_paths[path].idx(), })
   }
@@ -201,7 +197,6 @@ impl XdrkFile {
   // RUN LEVEL FUNCTIONS --------------------------------------------------- //
   pub fn championship(&self) -> Result<String> {
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("championship - {:#?}", _guard);
     srv::strptr_to_string(unsafe {
       aim::get_championship_name(self.idx as i32)
     })
@@ -209,25 +204,21 @@ impl XdrkFile {
 
   pub fn track(&self) -> Result<String> {
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("track - {:#?}", _guard);
     srv::strptr_to_string(unsafe { aim::get_track_name(self.idx as i32) })
   }
 
   pub fn venue_type(&self) -> Result<String> {
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("venue_type - {:#?}", _guard);
     srv::strptr_to_string(unsafe { aim::get_venue_type_name(self.idx as i32) })
   }
 
   pub fn vehicle(&self) -> Result<String> {
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("vehicle - {:#?}", _guard);
     srv::strptr_to_string(unsafe { aim::get_vehicle_name(self.idx as i32) })
   }
 
   pub fn racer(&self) -> Result<String> {
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("racer - {:#?}", _guard);
     srv::strptr_to_string(unsafe { aim::get_racer_name(self.idx as i32) })
   }
 
@@ -235,7 +226,6 @@ impl XdrkFile {
   /// this `XdrkFile` was recorded.
   pub fn datetime(&self) -> Result<NaiveDateTime> {
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("datetim - {:#?}", _guard);
     let tm: *const aim::tm =
       unsafe { aim::get_date_and_time(self.idx as i32) };
     ensure!(!tm.is_null(), "could not fetch datetime object");
@@ -251,7 +241,6 @@ impl XdrkFile {
   /// On success, the `Result` contains the number of laps in this `XdrkFile`.
   pub fn number_of_laps(&self) -> Result<usize> {
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("number_of_laps - {:#?}", _guard);
     let count = unsafe { aim::get_laps_count(self.idx as i32) };
     match count.cmp(&0) {
       Ordering::Greater => Ok(count as usize),
@@ -271,7 +260,6 @@ impl XdrkFile {
     ensure!(lap_idx < self.number_of_laps()?, "lap_idx out of range");
 
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("lap_info - {:#?}", _guard);
     let (mut start, mut time) = (0.0f64, 0.0f64);
     let err_code = unsafe {
       aim::get_lap_info(self.idx as i32, lap_idx as i32, &mut start, &mut time)
@@ -362,7 +350,6 @@ impl XdrkFile {
   pub fn channel_unit(&self, channel_idx: usize) -> Result<String> {
     let channels_count = self.channels_count()?;
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("channel_unit - {:#?}", _guard);
     srv::strptr_to_string(unsafe {
       if channel_idx < channels_count {
         aim::get_channel_units(self.idx as i32, channel_idx as i32)
@@ -416,7 +403,6 @@ impl XdrkFile {
   /// `XdrkFile`.
   pub fn channels_count(&self) -> Result<usize> {
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("channels_count - {:#?}", _guard);
     let count = unsafe { aim::get_channels_count(self.idx as i32) };
     match count.cmp(&0) {
       Ordering::Greater => Ok(count as usize),
@@ -432,7 +418,6 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("channel_samples_count - {:#?}", _guard);
     let count = unsafe {
       aim::get_channel_samples_count(self.idx as i32, channel_idx as i32)
     };
@@ -458,7 +443,6 @@ impl XdrkFile {
     let count = self.channel_samples_count(channel_idx)?;
     let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("channel_samples - {:#?}", _guard);
     let read = unsafe {
       aim::get_channel_samples(self.idx as i32,
                                channel_idx as i32,
@@ -482,7 +466,6 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("lap_channel_samples_count - {:#?}", _guard);
     let count = unsafe {
       aim::get_lap_channel_samples_count(self.idx as i32,
                                          lap_idx as i32,
@@ -513,7 +496,6 @@ impl XdrkFile {
     let count = self.lap_channel_samples_count(lap_idx, channel_idx)?;
     let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("lap_channel_samples - {:#?}", _guard);
     let read = unsafe {
       aim::get_lap_channel_samples(self.idx as i32,
                                    lap_idx as i32,
@@ -537,7 +519,6 @@ impl XdrkFile {
   /// `XdrkFile`.
   pub fn gps_channels_count(&self) -> Result<usize> {
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("gps_channels_count - {:#?}", _guard);
     let count = unsafe { aim::get_GPS_channels_count(self.idx as i32) };
     match count.cmp(&0) {
       Ordering::Greater => Ok(count as usize),
@@ -552,7 +533,6 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("gps_channel_name - {:#?}", _guard);
     srv::strptr_to_string(unsafe {
       aim::get_GPS_channel_name(self.idx as i32, channel_idx as i32)
     })
@@ -564,7 +544,6 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("gps_channel_unit - {:#?}", _guard);
     srv::strptr_to_string(unsafe {
       aim::get_GPS_channel_units(self.idx as i32, channel_idx as i32)
     })
@@ -579,7 +558,6 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("gps_channel_samples_count - {:#?}", _guard);
     let count = unsafe {
       aim::get_GPS_channel_samples_count(self.idx as i32, channel_idx as i32)
     };
@@ -607,7 +585,6 @@ impl XdrkFile {
     let count = self.gps_channel_samples_count(channel_idx)?;
     let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("gps_channel_samples - {:#?}", _guard);
     let read = unsafe {
       aim::get_GPS_channel_samples(self.idx as i32,
                                    channel_idx as i32,
@@ -631,7 +608,6 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("lap_gps_channel_samples_count - {:#?}", _guard);
     let count = unsafe {
       aim::get_lap_GPS_channel_samples_count(self.idx as i32,
                                              lap_idx as i32,
@@ -662,7 +638,6 @@ impl XdrkFile {
     let count = self.lap_gps_channel_samples_count(lap_idx, channel_idx)?;
     let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("lap_gps_channel_samples - {:#?}", _guard);
     let read = unsafe {
       aim::get_lap_GPS_channel_samples(self.idx as i32,
                                        lap_idx as i32,
@@ -686,7 +661,6 @@ impl XdrkFile {
   /// TO THE UNDERLYING LIBRARY FUNCTION.
   pub fn gps_raw_channels_count(&self) -> Result<usize> {
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("gps_raw_channels_count - {:#?}", _guard);
     let count = unsafe { aim::get_GPS_raw_channels_count(self.idx as i32) };
     match count.cmp(&0) {
       Ordering::Greater => Ok(count as usize),
@@ -704,7 +678,6 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("gps_raw_channel_name - {:#?}", _guard);
     srv::strptr_to_string(unsafe {
       aim::get_GPS_raw_channel_name(self.idx as i32, channel_idx as i32)
     })
@@ -720,7 +693,6 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("gps_raw_channel_unit - {:#?}", _guard);
     srv::strptr_to_string(unsafe {
       aim::get_GPS_raw_channel_units(self.idx as i32, channel_idx as i32)
     })
@@ -738,7 +710,6 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("gps_raw_channel_samples_count - {:#?}", _guard);
     let count = unsafe {
       aim::get_GPS_raw_channel_samples_count(self.idx as i32,
                                              channel_idx as i32)
@@ -770,7 +741,6 @@ impl XdrkFile {
     let count = self.gps_raw_channel_samples_count(channel_idx)?;
     let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("gps_raw_channel_samples - {:#?}", _guard);
     let read = unsafe {
       aim::get_GPS_raw_channel_samples(self.idx as i32,
                                        channel_idx as i32,
@@ -798,7 +768,6 @@ impl XdrkFile {
             "channel_idx out of range");
 
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("lap_gps_raw_channel_samples_count - {:#?}", _guard);
     let count = unsafe {
       aim::get_lap_GPS_raw_channel_samples_count(self.idx as i32,
                                                  lap_idx as i32,
@@ -832,7 +801,6 @@ impl XdrkFile {
     let count = self.lap_gps_raw_channel_samples_count(lap_idx, channel_idx)?;
     let (mut timestamps, mut samples) = ChannelData::allocate(count);
     let _guard = LIBCALL_MTX.lock().unwrap();
-    println!("lap_gps_raw_channel_samples - {:#?}", _guard);
     let read = unsafe {
       aim::get_lap_GPS_raw_channel_samples(self.idx as i32,
                                            lap_idx as i32,
