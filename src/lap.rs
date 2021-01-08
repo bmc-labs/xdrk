@@ -12,7 +12,7 @@ use getset::{CopyGetters, Getters};
 #[derive(Debug, PartialEq, CopyGetters, Getters)]
 pub struct Lap {
   #[getset(get_copy = "pub")]
-  number:   usize,
+  id:       usize,
   #[getset(get_copy = "pub")]
   start:    f64,
   #[getset(get_copy = "pub")]
@@ -23,7 +23,7 @@ pub struct Lap {
 
 impl Lap {
   pub fn new(info: LapInfo, channels: Vec<Channel>) -> Self {
-    Self { number: info.number(),
+    Self { id: info.id(),
            start: info.start(),
            time: info.time(),
            channels }
@@ -56,16 +56,14 @@ impl Lap {
 #[derive(Debug, PartialEq, CopyGetters)]
 #[getset(get_copy = "pub")]
 pub struct LapInfo {
-  number: usize,
-  start:  f64,
-  time:   f64,
+  id:    usize,
+  start: f64,
+  time:  f64,
 }
 
 impl LapInfo {
-  pub fn new(number: usize, start: f64, time: f64) -> Self {
-    Self { number,
-           start,
-           time }
+  pub fn new(id: usize, start: f64, time: f64) -> Self {
+    Self { id, start, time }
   }
 }
 
@@ -85,7 +83,7 @@ mod tests {
     let xdrk_file = XdrkFile::load(Path::new(XRK_PATH)).unwrap();
 
     let lap = xdrk_file.lap(1).unwrap();
-    assert_eq!(1, lap.number());
+    assert_eq!(1, lap.id());
     assert_eq!(249.509, lap.start());
     assert_eq!(133.749, lap.time());
 
@@ -156,7 +154,7 @@ mod tests {
   #[test]
   fn lap_info_test() {
     let lap_info = LapInfo::new(2, 145.156, 133.135);
-    assert_eq!(2, lap_info.number());
+    assert_eq!(2, lap_info.id());
     assert_eq!(145.156, lap_info.start());
     assert_eq!(133.135, lap_info.time());
   }
