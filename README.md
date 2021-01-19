@@ -1,3 +1,10 @@
+# DEPRECATED - HAS BEEN INTEGRATED IN OPTIMUS
+
+which you can find [here](https://gitlab.bmc-labs.com/libraries/optimus)
+
+--
+
+
 # `xdrk` - a library to access files produced by AiM devices
 
 Or rather, a Rust wrapper for the shared library provided by AiM which is
