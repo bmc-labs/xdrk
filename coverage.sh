@@ -17,22 +17,22 @@ cargo test -- --ignored
 
 # use grcov to generate report info
 mkdir -p ./target/coverage
-grcov -s . --llvm --branch --ignore-not-existing    \
-      --excl-br-start "mod tests \{"                \
-      --excl-start "mod tests \{"                   \
-      --excl-br-line "#\[derive\(|^/{2,3}|impl"     \
-      --excl-line "#\[derive\(|^/{2,3}|impl"        \
-      -o ./target/coverage/full.info ./target/debug
+grcov -s . --llvm --branch --ignore-not-existing \
+      --excl-br-start "mod tests \{"             \
+      --excl-start "mod tests \{"                \
+      --excl-br-line "#\[derive\(|^/{2,3}|impl"  \
+      --excl-line "#\[derive\(|^/{2,3}|impl"     \
+      -o ./target/coverage/full.info             \
+      ./target/debug
 
 # filter the report using lcov
-lcov --extract ./target/coverage/full.info \
-     "src/channel.rs"                      \
-     "src/lap.rs"                          \
-     "src/raw_channel.rs"                  \
-     "src/run.rs"                          \
-     "src/service.rs"                      \
-     "src/xdrk_file.rs"                    \
-     -o ./target/coverage/xdrk.info
+lcov --extract ./target/coverage/full.info                             \
+  $(find src -type f -regextype posix-extended -regex '.*\b\w+?\.rs$') \
+  -o ./target/coverage/extracted.info
+
+lcov --remove ./target/coverage/extracted.info                              \
+  $(find src -type f -regextype posix-extended -regex '.*\b(lib|mod)\.rs$') \
+  -o ./target/coverage/xdrk.info
 
 # generate report for GitLab CI
 lcov --list ./target/coverage/xdrk.info

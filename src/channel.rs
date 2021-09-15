@@ -1,8 +1,8 @@
-// Copyright 2020 bmc::labs Gmbh. All rights reserved.
+// Copyright 2021 bmc::labs Gmbh. All rights reserved.
 //
 // Authors:
-//   Jonas Reitemeyer <jonas@bmc-labs.com>
 //   Florian Eich <florian@bmc-labs.com>
+//   Jonas Reitemeyer <alumni@bmc-labs.com>
 
 use getset::{CopyGetters, Getters, MutGetters};
 use std::{iter, vec};
@@ -77,8 +77,7 @@ impl ChannelData {
   pub fn from_tsc(mut timestamps: Vec<f64>,
                   mut samples: Vec<f64>,
                   capacity: usize)
-                  -> Self
-  {
+                  -> Self {
     assert_eq!(timestamps.capacity(), capacity);
     assert_eq!(samples.capacity(), capacity);
 
@@ -114,33 +113,31 @@ impl IntoIterator for ChannelData {
 
 #[cfg(test)]
 mod tests {
-  use super::{super::XdrkFile, *};
+  use super::{super::Run, *};
   use pretty_assertions::{assert_eq, assert_ne};
   use std::path::Path;
 
 
   const XRK_PATH: &str =
-    "./testdata/WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
+    "./testdata/032/TCR_EU-21_E02-LCA_Q1_AU-RS3-R5-S-S_032_A_1375.xrk";
 
   #[test]
   fn channel_test() {
     // happy path tests without context
     let size = 42;
-    let channel_data = ChannelData::from_tsc(Vec::with_capacity(size),
-                                                    Vec::with_capacity(size),
-                                                    size);
+    let channel_data =
+      ChannelData::from_tsc(vec![0.0; size], vec![0.0; size], size);
     let channel = Channel::new("warbl".to_string(),
-                                      "garbl".to_string(),
-                                      channel_data.clone());
+                               "garbl".to_string(),
+                               channel_data.clone());
     assert_eq!("warbl", channel.name());
     assert_eq!("garbl", channel.unit());
     assert_eq!(0.0, channel.frequency());
     assert_eq!(false, channel.is_empty());
     assert_eq!(size, channel.len());
 
-    let new_channel = Channel::new("foo".to_string(),
-                                      "bar".to_string(),
-                                      channel_data.clone());
+    let new_channel =
+      Channel::new("foo".to_string(), "bar".to_string(), channel_data.clone());
     assert_ne!(channel, new_channel);
 
     let channel = new_channel;
@@ -151,14 +148,14 @@ mod tests {
     assert_eq!(size, channel.len());
 
     // tests with context
-    let channel = XdrkFile::load(Path::new(XRK_PATH)).unwrap()
-                                                         .channel(2, None)
-                                                         .unwrap();
+    let channel = Run::load(Path::new(XRK_PATH)).unwrap()
+                                                 .channel(2, None)
+                                                 .unwrap();
     assert_eq!("pManifoldScrut", channel.name());
     assert_eq!("bar", channel.unit());
     assert_eq!(100.0, channel.frequency());
     assert_eq!(false, channel.is_empty());
-    assert_eq!(57980, channel.len());
+    assert_eq!(70588, channel.len());
   }
 
   #[test]
@@ -167,9 +164,8 @@ mod tests {
     let (first_size, second_size) = (42, 1337);
     let (timestamps, samples) =
       (Vec::with_capacity(first_size), Vec::with_capacity(second_size));
-    let _panic = ChannelData::from_tsc(timestamps.clone(),
-                                          samples.clone(),
-                                          first_size);
+    let _panic =
+      ChannelData::from_tsc(timestamps.clone(), samples.clone(), first_size);
   }
 
   #[test]
@@ -178,9 +174,8 @@ mod tests {
     let (first_size, second_size) = (42, 1337);
     let (timestamps, samples) =
       (Vec::with_capacity(first_size), Vec::with_capacity(second_size));
-    let _panic = ChannelData::from_tsc(timestamps.clone(),
-                                          samples.clone(),
-                                          second_size);
+    let _panic =
+      ChannelData::from_tsc(timestamps.clone(), samples.clone(), second_size);
   }
 
   #[test]
@@ -221,13 +216,13 @@ mod tests {
     assert_ne!(channel_data, other_data);
 
     // tests with context from test data
-    let channel_data = XdrkFile::load(Path::new(XRK_PATH)).unwrap()
-                                                          .channel(2, None)
-                                                          .unwrap()
-                                                          .data()
-                                                          .clone();
+    let channel_data = Run::load(Path::new(XRK_PATH)).unwrap()
+                                                      .channel(2, None)
+                                                      .unwrap()
+                                                      .data()
+                                                      .clone();
     assert_eq!(false, channel_data.is_empty());
-    assert_eq!(57980, channel_data.timestamps().len());
-    assert_eq!(57980, channel_data.samples().len());
+    assert_eq!(70588, channel_data.timestamps().len());
+    assert_eq!(70588, channel_data.samples().len());
   }
 }

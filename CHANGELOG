@@ -4,42 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-### Added
-- implement interface to GPS, now same as other channels
-- calculation of lap distance from GPS
-- THREAD SAFE ALL THE THINGS
+## 1.0.0 - end of September 2021
+First actual release, and a reasonable starting point for CHANGELOG keeping. It
+has been decided to make it a major release, since at this point it has been
+tested internally somewhat and although there are still some doubts regarding
+thread safety and the benefit of doing so much of the initial work when opening
+the file for caching, it seems to be working sufficiently well to be used in
+production for us. YMMV, issue reports are welcome.
 
-### Changed
-- type `RunData` has been renamed to `Run`
-- simplified API for `XdrkFile`
-- slight improvements and simplifications on API of `Channel` and `RawChannel`
-- the `frequency` methods now return f64 for BSON serializability
-- moved `Channel` and all functionality to optimus, `xdrk` now only provides
-    raw channels via the API
-- the `Raw` prefix has thus been dropped (except for AiM's GPS stuff)
-- moved distance calculation from `Lap` to optimus, as planned
-- `Run` is created by calling `Run::from_file` now, as opposed to before:
-    `Run::new`, which by convention tends to return a virgin object
-- switch API of `Run::from_file` from taking a `&str` to taking a `&Path`
-
-### Fixed
-- data vectors in `RawChannelData` previously weren't zeroed; now they are
-
-## [1.2.0] - 2020-12-15
-### Added
-- loads of API for easier access to data
-- implementation of converting to a more usable format
-- synchronization of channels
-- along with synchronization: space savings by going from f64 to f32
-
-## 1.0.0 - end of November 2020
+## 0.1.0 - end of November 2020
 This was basically the first version worth mentioning, and it was as stable as
 the underlying library allowed. That is, it carried all functionality of the
 raw bindings for the C based library into a robust Rust interface which hid all
 the `unsafe` ugliness from the user. The API, however, was still as basic as
 the original library provided by AiM.
-
-
-[Unreleased]: https://gitlab.bmc-labs.com/libraries/xdrk/-/compare/v1.2.0...trunk
-[1.2.0]: https://gitlab.bmc-labs.com/libraries/xdrk/-/releases/v1.2.0

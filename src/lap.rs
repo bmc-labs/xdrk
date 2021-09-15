@@ -1,8 +1,8 @@
-// Copyright 2020 bmc::labs Gmbh. All rights reserved.
+// Copyright 2021 bmc::labs Gmbh. All rights reserved.
 //
 // Authors:
-//   Jonas Reitemeyer <jonas@bmc-labs.com>
 //   Florian Eich <florian@bmc-labs.com>
+//   Jonas Reitemeyer <alumni@bmc-labs.com>
 
 use super::Channel;
 use getset::{CopyGetters, Getters};
@@ -53,7 +53,7 @@ impl Lap {
 }
 
 /// Stores the start time within the recording and the time of a lap.
-#[derive(Debug, PartialEq, CopyGetters)]
+#[derive(Debug, Clone, Copy, PartialEq, CopyGetters)]
 #[getset(get_copy = "pub")]
 pub struct LapInfo {
   id:    usize,
@@ -70,26 +70,27 @@ impl LapInfo {
 
 #[cfg(test)]
 mod tests {
-  use super::{super::XdrkFile, *};
+  use super::{super::Run, *};
   use pretty_assertions::{assert_eq, assert_ne};
   use std::path::Path;
 
 
   const XRK_PATH: &str =
-    "./testdata/WT-20_E05-ARA_Q3_AU-RS3-R5-S-S_017_a_1220.xrk";
+    "./testdata/032/TCR_EU-21_E02-LCA_Q1_AU-RS3-R5-S-S_032_A_1375.xrk";
 
   #[test]
   fn lap_test() {
-    let xdrk_file = XdrkFile::load(Path::new(XRK_PATH)).unwrap();
+    let run = Run::load(Path::new(XRK_PATH)).unwrap();
 
-    let lap = xdrk_file.lap(1).unwrap();
+    let lap = run.lap(1).unwrap();
     assert_eq!(1, lap.id());
-    assert_eq!(249.509, lap.start());
-    assert_eq!(133.749, lap.time());
+    assert_eq!(201.243, lap.start());
+    assert_eq!(134.936, lap.time());
 
     macro_rules! stringvec {
       ($($x:literal),* $(,)?) => (vec![$($x.to_string()),*]);
     }
+    #[cfg(target_family = "unix")]
     let channel_names = stringvec!["Logger Temperature",
                                    "External Voltage",
                                    "pManifoldScrut",
@@ -114,6 +115,8 @@ mod tests {
                                    "rLambda",
                                    "rPedal",
                                    "rThrottle",
+                                   "swGearDown",
+                                   "swGearUp",
                                    "swLaunchState",
                                    "swRotFcy",
                                    "swRotPit",
@@ -125,11 +128,8 @@ mod tests {
                                    "vWheelFR",
                                    "vWheelRL",
                                    "vWheelRR",
-                                   "mEngTorq",
-                                   "mEngTorqTarget",
-                                   "posGearDSG",
-                                   "swGearUP",
-                                   "swGearDOWN",
+                                   "momEngTorq",
+                                   "momEngTorqTarget",
                                    "GPS Speed",
                                    "GPS Nsat",
                                    "GPS LatAcc",
@@ -141,6 +141,57 @@ mod tests {
                                    "GPS PosAccuracy",
                                    "GPS SpdAccuracy",
                                    "GPS Radius",];
+    #[cfg(target_family = "windows")]
+    let channel_names = stringvec!["Logger Temperature",
+                                   "External Voltage",
+                                   "pManifoldScrut",
+                                   "tManifoldScrut",
+                                   "aLon",
+                                   "aLat",
+                                   "aVer",
+                                   "wRoll",
+                                   "wPitch",
+                                   "wYaw",
+                                   "bAdvance",
+                                   "bSteering",
+                                   "bVvtIn",
+                                   "bVvtOut",
+                                   "dInjection",
+                                   "fEngRpm",
+                                   "pBrakeF",
+                                   "pBrakeR",
+                                   "pManifold",
+                                   "posGear",
+                                   "pRail",
+                                   "rLambda",
+                                   "rPedal",
+                                   "rThrottle",
+                                   "swGearDown",
+                                   "swGearUp",
+                                   "swLaunchState",
+                                   "swRotFcy",
+                                   "swRotPit",
+                                   "tAmbient",
+                                   "tManifold",
+                                   "tWater",
+                                   "uBarrel",
+                                   "vWheelFL",
+                                   "vWheelFR",
+                                   "vWheelRL",
+                                   "vWheelRR",
+                                   "momEngTorq",
+                                   "momEngTorqTarget",
+                                   "",
+                                   "",
+                                   "",
+                                   "",
+                                   "",
+                                   "",
+                                   "",
+                                   "",
+                                   "",
+                                   "",
+                                   "",];
     assert_eq!(channel_names, lap.channel_names());
 
     let p_manifold_scrut = lap.channel("pManifoldScrut").unwrap();
@@ -148,7 +199,10 @@ mod tests {
     assert_eq!(100.0, p_manifold_scrut.frequency());
 
     assert_eq!(100.0, lap.max_frequency());
-    assert_ne!(lap, xdrk_file.lap(2).unwrap());
+    assert_ne!(lap, run.lap(2).unwrap());
+
+    let lap = Lap::new(LapInfo::new(0, 0.0, 0.0), Vec::new());
+    assert_eq!(0.0, lap.max_frequency());
   }
 
   #[test]

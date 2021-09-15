@@ -1,6 +1,8 @@
-// Copyright 2020 bmc::labs Gmbh. All rights reserved.
+// Copyright 2021 bmc::labs Gmbh. All rights reserved.
 //
-// Author: Florian Eich <florian@bmc-labs.com>
+// Authors:
+//   Florian Eich <florian@bmc-labs.com>
+//   Jonas Reitemeyer <alumni@bmc-labs.com>
 
 use std::{env, fs, path::Path};
 

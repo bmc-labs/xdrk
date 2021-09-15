@@ -1,8 +1,8 @@
-// Copyright 2020 bmc::labs Gmbh. All rights reserved.
+// Copyright 2021 bmc::labs Gmbh. All rights reserved.
 //
 // Authors:
 //   Florian Eich <florian@bmc-labs.com>
-//   Jonas Reitemeyer <jonas@bmc-labs.com>
+//   Jonas Reitemeyer <alumni@bmc-labs.com>
 
 //! `xrdk` is a Rust wrapper around the shared library to access data in XRK
 //! or DRK format. Such data is recorded by devices from _AiM Tech Srl_, a
@@ -18,19 +18,16 @@
 //! - time series data of logged sensory measurements, where one sample is
 //!   expressed as a timestamp and a corresponding measurement
 //!
-//! This crate wraps the original library and provides a safe, Rust-idiomatic
+//! This module wraps the original library and provides a safe, Rust-idiomatic
 //! interface to its functionality. Aside from the raw API provided by the
-//! library, higher level functions for retrieving data are provided, as well
-//! as machinery to synchronize the raw data into matching time series.
+//! library, higher level functions for retrieving data are provided.
 
+mod bindings;
 mod channel;
 mod lap;
 mod run;
-mod service;
-mod xdrk_bindings;
-mod xdrk_file;
+mod util;
 
 pub use channel::{Channel, ChannelData};
 pub use lap::{Lap, LapInfo};
 pub use run::Run;
-pub use xdrk_file::XdrkFile;
