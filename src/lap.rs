@@ -10,41 +10,45 @@ use getset::{CopyGetters, Getters};
 
 /// Hold all channels of a lap.
 #[derive(Debug, PartialEq, CopyGetters, Getters)]
+#[getset(get = "pub")]
 pub struct Lap {
-  #[getset(get_copy = "pub")]
-  id:       usize,
-  #[getset(get_copy = "pub")]
-  start:    f64,
-  #[getset(get_copy = "pub")]
-  time:     f64,
-  #[getset(get = "pub")]
-  channels: Vec<Channel>,
+  info: LapInfo,
+  data: Vec<Channel>,
 }
 
 impl Lap {
-  pub fn new(info: LapInfo, channels: Vec<Channel>) -> Self {
-    Self { id: info.id(),
-           start: info.start(),
-           time: info.time(),
-           channels }
+  pub fn new(info: LapInfo, data: Vec<Channel>) -> Self {
+    Self { info, data }
+  }
+
+  pub fn no(&self) -> usize {
+    self.info.no()
+  }
+
+  pub fn start(&self) -> f64 {
+    self.info.start()
+  }
+
+  pub fn time(&self) -> f64 {
+    self.info.time()
   }
 
   pub fn channel_names(&self) -> Vec<String> {
-    self.channels
+    self.data
         .iter()
         .map(|channel| channel.name().clone())
         .collect()
   }
 
   pub fn channel(&self, name: &str) -> Option<&Channel> {
-    self.channels.iter().find(|c| c.name() == name)
+    self.data.iter().find(|c| c.name() == name)
   }
 
   pub fn max_frequency(&self) -> f64 {
-    if self.channels.is_empty() {
+    if self.data.is_empty() {
       return 0.0;
     }
-    self.channels
+    self.data
         .iter()
         .max_by_key(|channel| channel.frequency() as usize)
         .unwrap()
@@ -56,14 +60,14 @@ impl Lap {
 #[derive(Debug, Clone, Copy, PartialEq, CopyGetters)]
 #[getset(get_copy = "pub")]
 pub struct LapInfo {
-  id:    usize,
+  no:    usize,
   start: f64,
   time:  f64,
 }
 
 impl LapInfo {
-  pub fn new(id: usize, start: f64, time: f64) -> Self {
-    Self { id, start, time }
+  pub fn new(no: usize, start: f64, time: f64) -> Self {
+    Self { no, start, time }
   }
 }
 
@@ -83,7 +87,7 @@ mod tests {
     let run = Run::load(Path::new(XRK_PATH)).unwrap();
 
     let lap = run.lap(1).unwrap();
-    assert_eq!(1, lap.id());
+    assert_eq!(1, lap.no());
     assert_eq!(201.243, lap.start());
     assert_eq!(134.936, lap.time());
 
@@ -208,7 +212,7 @@ mod tests {
   #[test]
   fn lap_info_test() {
     let lap_info = LapInfo::new(2, 145.156, 133.135);
-    assert_eq!(2, lap_info.id());
+    assert_eq!(2, lap_info.no());
     assert_eq!(145.156, lap_info.start());
     assert_eq!(133.135, lap_info.time());
   }
