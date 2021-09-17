@@ -9,6 +9,12 @@ use getset::{CopyGetters, Getters};
 
 
 /// Hold all channels of a lap.
+///
+/// Please not the difference between the lap index (`.idx()`), which starts at
+/// 0 and indicates the lap position within the collection of laps, and the lap
+/// number (`.number()`), which is the counter and which is what is used in
+/// common parlance and starts at 1. In other words, `.number()` will always
+/// return `.idx() + 1`.
 #[derive(Debug, PartialEq, CopyGetters, Getters)]
 #[getset(get = "pub")]
 pub struct Lap {
@@ -17,18 +23,28 @@ pub struct Lap {
 }
 
 impl Lap {
+  /// Construct a new `Lap` from a `LapInfo` object and a set of channel data.
   pub fn new(info: LapInfo, data: Vec<Channel>) -> Self {
     Self { info, data }
   }
 
-  pub fn no(&self) -> usize {
-    self.info.no()
+  /// Index of the lap in the set, i.e. starting at 0.
+  pub fn idx(&self) -> usize {
+    self.info.idx()
   }
 
+  /// Convenience function to obtain _lap number_ as used in common motorsport
+  /// parlance, which starts at 1.
+  pub fn number(&self) -> usize {
+    self.info.number()
+  }
+
+  /// Start of the lap as time within the run.
   pub fn start(&self) -> f64 {
     self.info.start()
   }
 
+  /// Lap time in seconds.
   pub fn time(&self) -> f64 {
     self.info.time()
   }
@@ -44,6 +60,7 @@ impl Lap {
     self.data.iter().find(|c| c.name() == name)
   }
 
+  /// Returns the highest frequency of any channel in this lap.
   pub fn max_frequency(&self) -> f64 {
     if self.data.is_empty() {
       return 0.0;
@@ -57,17 +74,29 @@ impl Lap {
 }
 
 /// Stores the start time within the recording and the time of a lap.
+///
+/// Please not the difference between the lap index (`.idx()`), which starts at
+/// 0 and indicates the lap position within the collection of laps, and the lap
+/// number (`.number()`), which is the counter and which is what is used in
+/// common parlance and starts at 1. In other words, `.number()` will always
+/// return `.idx() + 1`.
 #[derive(Debug, Clone, Copy, PartialEq, CopyGetters)]
 #[getset(get_copy = "pub")]
 pub struct LapInfo {
-  no:    usize,
+  idx:   usize,
   start: f64,
   time:  f64,
 }
 
 impl LapInfo {
-  pub fn new(no: usize, start: f64, time: f64) -> Self {
-    Self { no, start, time }
+  /// Construct a new `LapInfo` from an index, a starting time and a lap time.
+  pub fn new(idx: usize, start: f64, time: f64) -> Self {
+    Self { idx, start, time }
+  }
+
+  /// Lap number as used in common motorsport parlance, starting at 1.
+  pub fn number(&self) -> usize {
+    self.idx() + 1
   }
 }
 
@@ -87,7 +116,8 @@ mod tests {
     let run = Run::load(Path::new(XRK_PATH)).unwrap();
 
     let lap = run.lap(1).unwrap();
-    assert_eq!(1, lap.no());
+    assert_eq!(1, lap.idx());
+    assert_eq!(2, lap.number());
     assert_eq!(201.243, lap.start());
     assert_eq!(134.936, lap.time());
 
@@ -212,7 +242,8 @@ mod tests {
   #[test]
   fn lap_info_test() {
     let lap_info = LapInfo::new(2, 145.156, 133.135);
-    assert_eq!(2, lap_info.no());
+    assert_eq!(2, lap_info.idx());
+    assert_eq!(3, lap_info.number());
     assert_eq!(145.156, lap_info.start());
     assert_eq!(133.135, lap_info.time());
   }
