@@ -49,6 +49,7 @@ impl Lap {
     self.info.time()
   }
 
+  /// List of the names of all channels in this `Lap`.
   pub fn channel_names(&self) -> Vec<String> {
     self.data
         .iter()
@@ -56,6 +57,7 @@ impl Lap {
         .collect()
   }
 
+  /// Request a channel by name.
   pub fn channel(&self, name: &str) -> Option<&Channel> {
     self.data.iter().find(|c| c.name() == name)
   }
