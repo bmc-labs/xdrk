@@ -4,6 +4,7 @@
 //   Florian Eich <florian@bmc-labs.com>
 //   Jonas Reitemeyer <alumni@bmc-labs.com>
 
+use eyre::{ensure, Result};
 use getset::{CopyGetters, Getters, MutGetters};
 use std::{iter, vec};
 
@@ -54,6 +55,87 @@ impl Channel {
 
   pub fn is_empty(&self) -> bool {
     self.len() == 0
+  }
+
+  /// Synchronize the channel with another channel, i.e. form a channel with
+  /// the same frequency and timestamps and corresponding values.
+  ///
+  /// ## Function
+  ///
+  /// This uses the timestamps of channel `other`. The newly created channel
+  ///
+  /// - has linearly interpolated samples if `other` has a higher frequency or
+  ///   if the distance between a timestamp and the corresponding timestamp in
+  ///   `other` is bigger than `0.5 * (1 / frequency)`
+  /// - skips all samples for timestamps with no corresponding timestamp or
+  ///   pair of timestamps in `other`
+  ///
+  /// ## Fails if
+  ///
+  /// - this channel or `other` contain less than 3 data points
+  /// - this channel and `other` have non-intersecting timestamp ranges
+  pub fn synchronize_with(&self, other: &Self) -> Result<Self> {
+    const DNCSDP: &str = "does not contain sufficient data points";
+    ensure!(self.len() >= 3, format!("channel {}", DNCSDP));
+    ensure!(other.len() >= 3, format!("other {}", DNCSDP));
+
+    // these unwraps are safe: we just tested that the channels are not empty,
+    // which would be the only way for the `.first()` and `.last()` calls to
+    // return a `None` value and thus cause a panic on unwrap
+    ensure!(self.data.timestamps().first().unwrap()
+            <= other.data.timestamps().last().unwrap()
+            && self.data.timestamps().last().unwrap()
+               >= other.data.timestamps().first().unwrap(),
+            "channels have non-intersecting timestamp ranges");
+
+    let (mut idx, timestamps, samples) =
+      (0usize, self.data.timestamps(), self.data.samples());
+
+    let mut new_sample: f64;
+    let mut new_samples = Vec::with_capacity(other.len());
+    let threshold = 0.5 / other.frequency();
+
+    // we create a new sample for each timestamp in other
+    for ref_ts in other.data.timestamps() {
+      // first we look for a timestamp which is later then the current ref_ts
+      new_sample = match timestamps[idx..].iter()
+                                          .position(|v| v > ref_ts)
+                                          .and_then(|pos| Some(idx + pos))
+      {
+        // if we find one and it's the first one and we are still at the start:
+        Some(pos) if pos == 0 => samples[0],
+        // if we find one and we're not at the start:
+        Some(pos) => {
+          // step back one sample, just before the current ref_ts...
+          idx = pos - 1;
+          if (ref_ts - timestamps[idx]).abs() <= threshold {
+            // and if that is closer than threshold, we use the value...
+            samples[idx]
+          } else if (ref_ts - timestamps[idx + 1]).abs() <= threshold {
+            // if the sample after the current ref_ts is closer, use that...
+            samples[idx + 1]
+          } else {
+            // otherwise, interpolate between the samples of the data point
+            // before and after the current ref_ts.
+            samples[idx]
+            + ((samples[idx + 1] - samples[idx])
+               / (timestamps[idx + 1] - timestamps[idx]))
+              * (ref_ts - timestamps[idx])
+          }
+        }
+        // if we don't find one, i.e. we're now "backfilling":
+        None => samples[samples.len() - 1],
+      };
+
+      // push the new sample
+      new_samples.push(new_sample);
+    }
+
+    Ok(Self::new(self.name.clone(),
+                 self.unit.clone(),
+                 ChannelData::from_tsc(other.data().timestamps().clone(),
+                                       new_samples,
+                                       other.len())))
   }
 }
 
@@ -148,14 +230,46 @@ mod tests {
     assert_eq!(size, channel.len());
 
     // tests with context
-    let channel = Run::load(Path::new(XRK_PATH)).unwrap()
-                                                 .channel(2, None)
-                                                 .unwrap();
+    let run = Run::load(Path::new(XRK_PATH)).unwrap();
+    let channel = run.channel(2, None).unwrap();
+
     assert_eq!("pManifoldScrut", channel.name());
     assert_eq!("bar", channel.unit());
     assert_eq!(100.0, channel.frequency());
     assert_eq!(false, channel.is_empty());
     assert_eq!(70588, channel.len());
+  }
+
+  #[test]
+  fn sync_test() {
+    let run = Run::load(Path::new(XRK_PATH)).unwrap();
+    let p_brake = run.channel(run.channel_idx("pBrakeF").unwrap(), Some(2))
+                     .unwrap();
+    let v_wheel = run.channel(run.channel_idx("vWheelFL").unwrap(), Some(2))
+                     .unwrap();
+
+    let p_brake_sync = p_brake.synchronize_with(&v_wheel).unwrap();
+    assert_eq!(v_wheel.len(), p_brake_sync.len());
+    assert_eq!(v_wheel.data().timestamps(),
+               p_brake_sync.data().timestamps());
+
+    // let p_brake_data = p_brake.data()
+    // .timestamps()
+    // .iter()
+    // .zip(p_brake.data().samples())
+    // .map(|(ts, s)| format!("{},{}", ts, s))
+    // .collect::<Vec<_>>()
+    // .join("\n");
+    // std::fs::write("p_brake_data.csv", p_brake_data).unwrap();
+    //
+    // let p_brake_sync_data = p_brake_sync.data()
+    // .timestamps()
+    // .iter()
+    // .zip(p_brake_sync.data().samples())
+    // .map(|(ts, s)| format!("{},{}", ts, s))
+    // .collect::<Vec<_>>()
+    // .join("\n");
+    // std::fs::write("p_brake_sync_data.csv", p_brake_sync_data).unwrap();
   }
 
   #[test]
@@ -217,10 +331,10 @@ mod tests {
 
     // tests with context from test data
     let channel_data = Run::load(Path::new(XRK_PATH)).unwrap()
-                                                      .channel(2, None)
-                                                      .unwrap()
-                                                      .data()
-                                                      .clone();
+                                                     .channel(2, None)
+                                                     .unwrap()
+                                                     .data()
+                                                     .clone();
     assert_eq!(false, channel_data.is_empty());
     assert_eq!(70588, channel_data.timestamps().len());
     assert_eq!(70588, channel_data.samples().len());
