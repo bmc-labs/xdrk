@@ -8,7 +8,7 @@ stages:
 
 test:cargo:
   stage: test
-  coverage: /^\s*lines\.*:\s*\d+(?:\.\d)?%\s\(.*\)$/
+  coverage: /^\s{2}lines\.{6}:\s+\d{1,3}(?:\.\d)?%\s\([\w\s]+\)$/
   tags:
     - coverage
     - rust
