@@ -8,7 +8,7 @@ stages:
 
 test:cargo:
   stage: test
-  coverage: '/Total:\|\s?\d+(\.\d+)?/'
+  coverage: /^\s*lines:\s*\d+.\d+\%/
   tags:
     - coverage
     - rust
