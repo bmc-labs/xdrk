@@ -25,7 +25,6 @@ pub struct tm {
 
 
 #[allow(dead_code)]
-#[doc(hidden)]
 extern "C" {
   // FILE OPENING / CLOSING FUNCTIONS -------------------------------------- //
   //
