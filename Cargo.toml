@@ -7,8 +7,13 @@
 [package]
 name = "xdrk"
 description = "Library to open XRK and DRK files, produced by AiM devices"
+homepage = "https://gitlab.bmc-labs.com/libraries/xdrk"
+documentation = "http://libraries.bmc-docs.com/xdrk"
+repository = "https://gitlab.bmc-labs.com/libraries/xdrk"
+readme = "README.md"
 
 version = "1.0.0"
+license = "Apache-2.0"
 authors = [
   "Florian Eich <florian@bmc-labs.com>",
   "Jonas Reitemeyer <alumni@bmc-labs.com"
